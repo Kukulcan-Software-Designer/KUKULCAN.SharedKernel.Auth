@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/Tests/">
+    <Project Path="Tests/KUKULCAN.SharedKernel.Auth.UnitTests/KUKULCAN.SharedKernel.Auth.UnitTests.csproj" />
+    <Project Path="Tests/KUKULCAN.SharedKernel.Auth.Integration/KUKULCAN.SharedKernel.Auth.Integration.csproj" />
+  </Folder>
+</Solution>
