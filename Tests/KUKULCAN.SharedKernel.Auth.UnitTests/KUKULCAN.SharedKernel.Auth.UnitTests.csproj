@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../../../../KUKULCAN.SharedKernel/Source/KUKULCAN.SharedKernel/KUKULCAN.SharedKernel.csproj" />
+    <ProjectReference Include="../../Source/KUKULCAN.SharedKernel.Auth/KUKULCAN.SharedKernel.Auth.csproj" />
   </ItemGroup>
 
   <ItemGroup>
