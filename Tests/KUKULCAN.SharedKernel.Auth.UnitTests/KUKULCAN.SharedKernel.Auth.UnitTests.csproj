@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="NUnit" />
+    <PackageReference Include="NUnit3TestAdapter" />
+    <PackageReference Include="NUnit.Analyzers" />
+    <PackageReference Include="Moq" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="AutoFixture" />
+    <PackageReference Include="AutoFixture.AutoMoq" />
+    <PackageReference Include="coverlet.collector" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../Source/KUKULCAN.SharedKernel.Auth/KUKULCAN.SharedKernel.Auth.csproj" />
+    <ProjectReference Include="../../../Source/KUKULCAN.SharedKernel.Auth.Application/KUKULCAN.SharedKernel.Auth.Application.csproj" />
+    <ProjectReference Include="../../../Source/KUKULCAN.SharedKernel.Auth.Domain/KUKULCAN.SharedKernel.Auth.Domain.csproj" />
+  </ItemGroup>
+
+</Project>
