@@ -18,9 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../../Source/KUKULCAN.SharedKernel.Auth/KUKULCAN.SharedKernel.Auth.csproj" />
-    <ProjectReference Include="../../../Source/KUKULCAN.SharedKernel.Auth.Application/KUKULCAN.SharedKernel.Auth.Application.csproj" />
-    <ProjectReference Include="../../../Source/KUKULCAN.SharedKernel.Auth.Domain/KUKULCAN.SharedKernel.Auth.Domain.csproj" />
+    <ProjectReference Include="../../../../KUKULCAN.SharedKernel/Source/KUKULCAN.SharedKernel/KUKULCAN.SharedKernel.csproj" />
   </ItemGroup>
 
 </Project>
