@@ -20,4 +20,6 @@ app.MapPost("/api/auth/local", async (
 
 app.Run();
 
-public partial class Program;
+public partial class Program
+{
+}
