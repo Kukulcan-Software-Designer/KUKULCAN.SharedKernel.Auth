@@ -120,4 +120,71 @@ public sealed class LocalAuthenticationServiceTests
         result.Error.Code.Should().Be("Auth.NoTenantAccess");
         result.Value.Should().BeNull();
     }
+
+    [Test]
+    public async Task AuthenticateAsync_WhenUserDoesNotExist_ReturnsInvalidCredentials()
+    {
+        // Arrange
+        const string email = "unknown@example.com";
+        const string password = "AnyPassword!";
+
+        var userStore = new Mock<ILocalUserStore>(MockBehavior.Strict);
+        userStore
+            .Setup(store => store.FindByEmailAsync(email, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((LocalUser?)null);
+
+        var passwordHasher = new Mock<IPasswordHasher>(MockBehavior.Strict);
+        var service = new LocalAuthenticationService(userStore.Object, passwordHasher.Object);
+
+        // Act
+        Result<AuthenticatedUser> result = await service.AuthenticateAsync(
+            new LocalAuthenticationRequest(email, password));
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.Error.Code.Should().Be("Auth.InvalidCredentials");
+        result.Value.Should().BeNull();
+
+        passwordHasher.Verify(
+            hasher => hasher.Verify(It.IsAny<string>(), It.IsAny<string>()),
+            Times.Never);
+    }
+
+    [Test]
+    public async Task AuthenticateAsync_WhenPasswordIsIncorrect_ReturnsInvalidCredentials()
+    {
+        // Arrange
+        const string email = "user@example.com";
+        const string password = "IncorrectPassword!";
+        var user = new LocalUser(
+            Guid.NewGuid(),
+            email,
+            "stored-password-hash",
+            [new TenantMembership(Guid.NewGuid())]);
+
+        var userStore = new Mock<ILocalUserStore>(MockBehavior.Strict);
+        userStore
+            .Setup(store => store.FindByEmailAsync(email, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+
+        var passwordHasher = new Mock<IPasswordHasher>(MockBehavior.Strict);
+        passwordHasher
+            .Setup(hasher => hasher.Verify(password, user.PasswordHash))
+            .Returns(false);
+
+        var service = new LocalAuthenticationService(userStore.Object, passwordHasher.Object);
+
+        // Act
+        Result<AuthenticatedUser> result = await service.AuthenticateAsync(
+            new LocalAuthenticationRequest(email, password));
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.Error.Code.Should().Be("Auth.InvalidCredentials");
+        result.Value.Should().BeNull();
+
+        passwordHasher.Verify(
+            hasher => hasher.Verify(password, user.PasswordHash),
+            Times.Once);
+    }
 }
