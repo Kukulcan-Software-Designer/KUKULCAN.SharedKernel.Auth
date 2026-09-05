@@ -65,8 +65,10 @@ public sealed class LocalAuthenticationService
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
+        ValidateRequest(request);
 
-        var user = await _userStore.FindByEmailAsync(request.Email, cancellationToken);
+        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+        var user = await _userStore.FindByEmailAsync(normalizedEmail, cancellationToken);
 
         if (user is null || !_passwordHasher.Verify(request.Password, user.PasswordHash))
         {
@@ -79,6 +81,22 @@ public sealed class LocalAuthenticationService
         }
 
         return Result<AuthenticatedUser>.Success(
-            new AuthenticatedUser(user.UserId, user.Email, user.Tenants));
+            new AuthenticatedUser(
+                user.UserId,
+                user.Email,
+                user.Tenants.ToArray()));
+    }
+
+    private static void ValidateRequest(LocalAuthenticationRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email))
+        {
+            throw new ArgumentException("Email is required.", nameof(request));
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Password))
+        {
+            throw new ArgumentException("Password is required.", nameof(request));
+        }
     }
 }
