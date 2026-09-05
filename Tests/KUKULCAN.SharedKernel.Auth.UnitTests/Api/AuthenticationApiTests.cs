@@ -16,7 +16,8 @@ public sealed class AuthenticationApiTests
         // Arrange
         var tenantId = Guid.NewGuid();
         var user = CreateUser([new TenantMembership(tenantId)]);
-        using var client = await CreateClientAsync(user);
+        using var factory = CreateFactory(user);
+        using var client = factory.CreateClient();
 
         // Act
         var response = await client.PostAsJsonAsync("/api/auth/local", new
@@ -42,7 +43,8 @@ public sealed class AuthenticationApiTests
         var tenantOne = new TenantMembership(Guid.NewGuid());
         var tenantTwo = new TenantMembership(Guid.NewGuid());
         var user = CreateUser([tenantOne, tenantTwo]);
-        using var client = await CreateClientAsync(user);
+        using var factory = CreateFactory(user);
+        using var client = factory.CreateClient();
 
         // Act
         var response = await client.PostAsJsonAsync("/api/auth/local", new
@@ -62,10 +64,38 @@ public sealed class AuthenticationApiTests
     }
 
     [Test]
+    public async Task AuthenticationApi_WhenSuccessfulResponseIsSerialized_DoesNotExposePasswordHash()
+    {
+        // Arrange
+        const string passwordHash = "stored-password-hash";
+        var user = new LocalUser(
+            Guid.NewGuid(),
+            "user@example.com",
+            passwordHash,
+            [new TenantMembership(Guid.NewGuid())]);
+        using var factory = CreateFactory(user);
+        using var client = factory.CreateClient();
+
+        // Act
+        var response = await client.PostAsJsonAsync("/api/auth/local", new
+        {
+            email = user.Email,
+            password = "correct-password"
+        });
+        var responseBody = await response.Content.ReadAsStringAsync();
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        responseBody.Should().NotContain(passwordHash);
+        responseBody.Should().NotContain("PasswordHash");
+    }
+
+    [Test]
     public async Task AuthenticationApi_WhenUserDoesNotExist_ReturnsUnauthorized()
     {
         // Arrange
-        using var client = await CreateClientAsync(null);
+        using var factory = CreateFactory(null);
+        using var client = factory.CreateClient();
 
         // Act
         var response = await client.PostAsJsonAsync("/api/auth/local", new
@@ -83,7 +113,8 @@ public sealed class AuthenticationApiTests
     {
         // Arrange
         var user = CreateUser([new TenantMembership(Guid.NewGuid())]);
-        using var client = await CreateClientAsync(user);
+        using var factory = CreateFactory(user);
+        using var client = factory.CreateClient();
 
         // Act
         var response = await client.PostAsJsonAsync("/api/auth/local", new
@@ -97,11 +128,42 @@ public sealed class AuthenticationApiTests
     }
 
     [Test]
+    public async Task AuthenticationApi_WhenUnknownUserAndWrongPasswordAreSubmitted_ReturnsSameUnauthorizedResponse()
+    {
+        // Arrange
+        var user = CreateUser([new TenantMembership(Guid.NewGuid())]);
+        using var unknownUserFactory = CreateFactory(null);
+        using var unknownUserClient = unknownUserFactory.CreateClient();
+        using var wrongPasswordFactory = CreateFactory(user);
+        using var wrongPasswordClient = wrongPasswordFactory.CreateClient();
+
+        // Act
+        var unknownUserResponse = await unknownUserClient.PostAsJsonAsync("/api/auth/local", new
+        {
+            email = "missing@example.com",
+            password = "incorrect-password"
+        });
+        var wrongPasswordResponse = await wrongPasswordClient.PostAsJsonAsync("/api/auth/local", new
+        {
+            email = user.Email,
+            password = "incorrect-password"
+        });
+        var unknownUserBody = await unknownUserResponse.Content.ReadAsStringAsync();
+        var wrongPasswordBody = await wrongPasswordResponse.Content.ReadAsStringAsync();
+
+        // Assert
+        unknownUserResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        wrongPasswordResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        wrongPasswordBody.Should().Be(unknownUserBody);
+    }
+
+    [Test]
     public async Task AuthenticationApi_WhenUserHasNoTenant_ReturnsForbidden()
     {
         // Arrange
         var user = CreateUser([]);
-        using var client = await CreateClientAsync(user);
+        using var factory = CreateFactory(user);
+        using var client = factory.CreateClient();
 
         // Act
         var response = await client.PostAsJsonAsync("/api/auth/local", new
@@ -119,7 +181,8 @@ public sealed class AuthenticationApiTests
     public async Task AuthenticationApi_WhenEmailIsEmptyOrWhitespace_ReturnsBadRequest(string email)
     {
         // Arrange
-        using var client = await CreateClientAsync(null);
+        using var factory = CreateFactory(null);
+        using var client = factory.CreateClient();
 
         // Act
         var response = await client.PostAsJsonAsync("/api/auth/local", new
@@ -137,7 +200,8 @@ public sealed class AuthenticationApiTests
     public async Task AuthenticationApi_WhenPasswordIsEmptyOrWhitespace_ReturnsBadRequest(string password)
     {
         // Arrange
-        using var client = await CreateClientAsync(null);
+        using var factory = CreateFactory(null);
+        using var client = factory.CreateClient();
 
         // Act
         var response = await client.PostAsJsonAsync("/api/auth/local", new
@@ -151,16 +215,80 @@ public sealed class AuthenticationApiTests
     }
 
     [Test]
+    public async Task AuthenticationApi_WhenEmailPropertyIsMissing_ReturnsBadRequest()
+    {
+        // Arrange
+        using var factory = CreateFactory(null);
+        using var client = factory.CreateClient();
+
+        // Act
+        var response = await client.PostAsJsonAsync("/api/auth/local", new
+        {
+            password = "correct-password"
+        });
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Test]
+    public async Task AuthenticationApi_WhenPasswordPropertyIsMissing_ReturnsBadRequest()
+    {
+        // Arrange
+        using var factory = CreateFactory(null);
+        using var client = factory.CreateClient();
+
+        // Act
+        var response = await client.PostAsJsonAsync("/api/auth/local", new
+        {
+            email = "user@example.com"
+        });
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Test]
+    public async Task AuthenticationApi_WhenRequestBodyIsMalformedJson_ReturnsBadRequest()
+    {
+        // Arrange
+        using var factory = CreateFactory(null);
+        using var client = factory.CreateClient();
+        using var content = new StringContent("{ \"email\": \"user@example.com\",", System.Text.Encoding.UTF8, "application/json");
+
+        // Act
+        var response = await client.PostAsync("/api/auth/local", content);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Test]
     public async Task AuthenticationApi_WhenRequestBodyIsMissing_ReturnsBadRequest()
     {
         // Arrange
-        using var client = await CreateClientAsync(null);
+        using var factory = CreateFactory(null);
+        using var client = factory.CreateClient();
 
         // Act
         using var response = await client.PostAsync("/api/auth/local", content: null);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Test]
+    public async Task AuthenticationApi_WhenLocalAuthenticationRouteIsAccessedWithGet_ReturnsMethodNotAllowed()
+    {
+        // Arrange
+        using var factory = CreateFactory(null);
+        using var client = factory.CreateClient();
+
+        // Act
+        var response = await client.GetAsync("/api/auth/local");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.MethodNotAllowed);
     }
 
     private static LocalUser CreateUser(IReadOnlyCollection<TenantMembership> tenants)
@@ -170,17 +298,13 @@ public sealed class AuthenticationApiTests
             "stored-password-hash",
             tenants);
 
-    private static async Task<HttpClient> CreateClientAsync(LocalUser? user)
-    {
-        var factory = new WebApplicationFactory<Program>()
+    private static WebApplicationFactory<Program> CreateFactory(LocalUser? user)
+        => new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder => builder.ConfigureServices(services =>
             {
                 services.AddSingleton<ILocalUserStore>(new StubLocalUserStore(user));
                 services.AddSingleton<IPasswordHasher>(new StubPasswordHasher());
             }));
-
-        return factory.CreateClient();
-    }
 
     private sealed class StubLocalUserStore(LocalUser? user) : ILocalUserStore
     {
