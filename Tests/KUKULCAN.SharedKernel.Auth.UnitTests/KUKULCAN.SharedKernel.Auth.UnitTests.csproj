@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>KUKULCAN.SharedKernel.Auth.UnitTests</RootNamespace>
+    <AssemblyName>KUKULCAN.SharedKernel.Auth.UnitTests</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../../KUKULCAN.SharedKernel/Source/KUKULCAN.SharedKernel/KUKULCAN.SharedKernel.csproj" />
+    <ProjectReference Include="../../Source/KUKULCAN.SharedKernel.Auth/KUKULCAN.SharedKernel.Auth.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.*" />
+    <PackageReference Include="NUnit" Version="4.*" />
+    <PackageReference Include="NUnit3TestAdapter" Version="5.*" />
+    <PackageReference Include="NUnit.Analyzers" Version="4.*" />
+    <PackageReference Include="Moq" Version="4.*" />
+    <PackageReference Include="FluentAssertions" Version="8.*" />
+    <PackageReference Include="AutoFixture" Version="4.*" />
+    <PackageReference Include="AutoFixture.AutoMoq" Version="4.*" />
+    <PackageReference Include="coverlet.collector" Version="6.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="TestResults\" />
+  </ItemGroup>
+
+</Project>
