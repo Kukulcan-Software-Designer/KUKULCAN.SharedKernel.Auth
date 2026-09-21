@@ -8,17 +8,44 @@ namespace KUKULCAN.SharedKernel.Auth.UnitTests;
 public sealed class FederatedAuthenticationServiceTests
 {
     [Test]
+    public void Constructor_WhenProvidersIsNull_ThrowsArgumentNullException()
+    {
+        Action act = () => new FederatedAuthenticationService(
+            null!,
+            new Mock<IFederatedUserStore>(MockBehavior.Strict).Object);
+
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Test]
+    public void Constructor_WhenUserStoreIsNull_ThrowsArgumentNullException()
+    {
+        Action act = () => new FederatedAuthenticationService(
+            Array.Empty<IFederatedAuthenticationProvider>(),
+            null!);
+
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Test]
+    public void Constructor_WhenProvidersIsEmpty_CreatesServiceWithoutThrowing()
+    {
+        Action act = () => new FederatedAuthenticationService(
+            Array.Empty<IFederatedAuthenticationProvider>(),
+            new Mock<IFederatedUserStore>(MockBehavior.Strict).Object);
+
+        act.Should().NotThrow();
+    }
+
+    [Test]
     public void AuthenticateAsync_WhenRequestIsNull_ThrowsArgumentNullException()
     {
-        // Arrange
         var provider = new Mock<IFederatedAuthenticationProvider>(MockBehavior.Strict);
         var userStore = new Mock<IFederatedUserStore>(MockBehavior.Strict);
         var service = new FederatedAuthenticationService([provider.Object], userStore.Object);
 
-        // Act
         Func<Task> act = () => service.AuthenticateAsync(null!);
 
-        // Assert
         act.Should().ThrowAsync<ArgumentNullException>();
         provider.VerifyNoOtherCalls();
         userStore.VerifyNoOtherCalls();
@@ -28,16 +55,13 @@ public sealed class FederatedAuthenticationServiceTests
     [TestCase("   ")]
     public void AuthenticateAsync_WhenProviderIsEmptyOrWhitespace_ThrowsArgumentException(string providerName)
     {
-        // Arrange
         var provider = new Mock<IFederatedAuthenticationProvider>(MockBehavior.Strict);
         var userStore = new Mock<IFederatedUserStore>(MockBehavior.Strict);
         var service = new FederatedAuthenticationService([provider.Object], userStore.Object);
 
-        // Act
         Func<Task> act = () => service.AuthenticateAsync(
             new FederatedAuthenticationRequest(providerName, "external-credential"));
 
-        // Assert
         act.Should().ThrowAsync<ArgumentException>();
         provider.VerifyNoOtherCalls();
         userStore.VerifyNoOtherCalls();
@@ -46,17 +70,14 @@ public sealed class FederatedAuthenticationServiceTests
     [Test]
     public async Task AuthenticateAsync_WhenProviderIsNotRegistered_ReturnsUnsupportedProviderFailure()
     {
-        // Arrange
         var provider = new Mock<IFederatedAuthenticationProvider>(MockBehavior.Strict);
         provider.SetupGet(item => item.Provider).Returns("Google");
         var userStore = new Mock<IFederatedUserStore>(MockBehavior.Strict);
         var service = new FederatedAuthenticationService([provider.Object], userStore.Object);
 
-        // Act
         Result<AuthenticatedUser> result = await service.AuthenticateAsync(
             new FederatedAuthenticationRequest("Microsoft", "external-credential"));
 
-        // Assert
         result.IsFailure.Should().BeTrue();
         result.Error.Code.Should().Be("Auth.UnsupportedFederatedProvider");
         provider.Verify(item => item.AuthenticateAsync(It.IsAny<FederatedAuthenticationRequest>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -68,7 +89,6 @@ public sealed class FederatedAuthenticationServiceTests
     [TestCase("Apple")]
     public async Task AuthenticateAsync_UsesTheProviderMatchingTheRequestedProvider(string providerName)
     {
-        // Arrange
         var expectedIdentity = new FederatedIdentity(
             providerName,
             "provider-subject",
@@ -97,11 +117,9 @@ public sealed class FederatedAuthenticationServiceTests
             [otherProvider.Object, selectedProvider.Object],
             userStore.Object);
 
-        // Act
         Result<AuthenticatedUser> result = await service.AuthenticateAsync(
             new FederatedAuthenticationRequest(providerName, "external-credential"));
 
-        // Assert
         result.IsSuccess.Should().BeTrue();
         result.Value.UserId.Should().Be(user.UserId);
         result.Value.Email.Should().Be(user.Email);
@@ -112,10 +130,40 @@ public sealed class FederatedAuthenticationServiceTests
         otherProvider.VerifyNoOtherCalls();
     }
 
+    [TestCase("Google")]
+    [TestCase("Microsoft")]
+    [TestCase("Apple")]
+    public async Task AuthenticateAsync_SelectsProviderCaseInsensitively(string providerName)
+    {
+        var identity = new FederatedIdentity(providerName, "provider-subject", "user@example.com");
+        var provider = new Mock<IFederatedAuthenticationProvider>(MockBehavior.Strict);
+        provider.SetupGet(item => item.Provider).Returns(providerName);
+        provider
+            .Setup(item => item.AuthenticateAsync(
+                It.Is<FederatedAuthenticationRequest>(request =>
+                    string.Equals(request.Provider, providerName, StringComparison.OrdinalIgnoreCase)),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<FederatedIdentity>.Success(identity));
+
+        var user = CreateUser([new TenantMembership(Guid.NewGuid())]);
+        var userStore = new Mock<IFederatedUserStore>(MockBehavior.Strict);
+        userStore
+            .Setup(store => store.FindByFederatedIdentityAsync(providerName, identity.Subject, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+
+        var service = new FederatedAuthenticationService([provider.Object], userStore.Object);
+
+        Result<AuthenticatedUser> result = await service.AuthenticateAsync(
+            new FederatedAuthenticationRequest(providerName.ToUpperInvariant(), "credential"));
+
+        result.IsSuccess.Should().BeTrue();
+        provider.Verify(item => item.AuthenticateAsync(
+            It.IsAny<FederatedAuthenticationRequest>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
     [Test]
     public async Task AuthenticateAsync_PropagatesCancellationTokenToProviderAndUserStore()
     {
-        // Arrange
         const string providerName = "Google";
         using var cancellationSource = new CancellationTokenSource();
         var cancellationToken = cancellationSource.Token;
@@ -137,12 +185,10 @@ public sealed class FederatedAuthenticationServiceTests
 
         var service = new FederatedAuthenticationService([provider.Object], userStore.Object);
 
-        // Act
         Result<AuthenticatedUser> result = await service.AuthenticateAsync(
             new FederatedAuthenticationRequest(providerName, "external-credential"),
             cancellationToken);
 
-        // Assert
         result.IsSuccess.Should().BeTrue();
         provider.Verify(item => item.AuthenticateAsync(It.IsAny<FederatedAuthenticationRequest>(), cancellationToken), Times.Once);
         userStore.Verify(item => item.FindByFederatedIdentityAsync(providerName, identity.Subject, cancellationToken), Times.Once);
@@ -151,7 +197,6 @@ public sealed class FederatedAuthenticationServiceTests
     [Test]
     public async Task AuthenticateAsync_WhenProviderRejectsCredential_ReturnsFailureAndDoesNotQueryUserStore()
     {
-        // Arrange
         const string providerName = "Google";
         var providerFailure = new Error("Auth.FederatedCredentialInvalid", "The federated credential is invalid.");
         var provider = new Mock<IFederatedAuthenticationProvider>(MockBehavior.Strict);
@@ -163,11 +208,9 @@ public sealed class FederatedAuthenticationServiceTests
         var userStore = new Mock<IFederatedUserStore>(MockBehavior.Strict);
         var service = new FederatedAuthenticationService([provider.Object], userStore.Object);
 
-        // Act
         Result<AuthenticatedUser> result = await service.AuthenticateAsync(
             new FederatedAuthenticationRequest(providerName, "invalid-credential"));
 
-        // Assert
         result.IsFailure.Should().BeTrue();
         result.Error.Should().Be(providerFailure);
         userStore.VerifyNoOtherCalls();
@@ -176,7 +219,6 @@ public sealed class FederatedAuthenticationServiceTests
     [Test]
     public async Task AuthenticateAsync_LooksUpUserByProviderAndStableSubject_NotByEmail()
     {
-        // Arrange
         const string providerName = "Microsoft";
         const string subject = "stable-provider-subject";
         const string email = "changed@example.com";
@@ -196,11 +238,9 @@ public sealed class FederatedAuthenticationServiceTests
 
         var service = new FederatedAuthenticationService([provider.Object], userStore.Object);
 
-        // Act
         Result<AuthenticatedUser> result = await service.AuthenticateAsync(
             new FederatedAuthenticationRequest(providerName, "credential"));
 
-        // Assert
         result.IsSuccess.Should().BeTrue();
         userStore.Verify(
             store => store.FindByFederatedIdentityAsync(providerName, subject, It.IsAny<CancellationToken>()),
@@ -211,7 +251,6 @@ public sealed class FederatedAuthenticationServiceTests
     [Test]
     public async Task AuthenticateAsync_WhenExternalIdentityIsNotLinked_ReturnsFailureWithoutProvisioningUser()
     {
-        // Arrange
         const string providerName = "Apple";
         var identity = new FederatedIdentity(providerName, "unlinked-subject", "user@example.com");
         var provider = new Mock<IFederatedAuthenticationProvider>(MockBehavior.Strict);
@@ -227,11 +266,9 @@ public sealed class FederatedAuthenticationServiceTests
 
         var service = new FederatedAuthenticationService([provider.Object], userStore.Object);
 
-        // Act
         Result<AuthenticatedUser> result = await service.AuthenticateAsync(
             new FederatedAuthenticationRequest(providerName, "valid-credential"));
 
-        // Assert
         result.IsFailure.Should().BeTrue();
         result.Error.Code.Should().Be("Auth.FederatedIdentityNotLinked");
         userStore.VerifyNoOtherCalls();
@@ -240,7 +277,6 @@ public sealed class FederatedAuthenticationServiceTests
     [Test]
     public async Task AuthenticateAsync_WhenLinkedUserHasMultipleTenants_ReturnsAllTenantMemberships()
     {
-        // Arrange
         const string providerName = "Google";
         var tenants = new[]
         {
@@ -261,20 +297,89 @@ public sealed class FederatedAuthenticationServiceTests
             .ReturnsAsync(user);
         var service = new FederatedAuthenticationService([provider.Object], userStore.Object);
 
-        // Act
         Result<AuthenticatedUser> result = await service.AuthenticateAsync(
             new FederatedAuthenticationRequest(providerName, "valid-credential"));
 
-        // Assert
         result.IsSuccess.Should().BeTrue();
         result.Value.Tenants.Select(tenant => tenant.TenantId)
             .Should().BeEquivalentTo(tenants.Select(tenant => tenant.TenantId));
     }
 
     [Test]
+    public async Task AuthenticateAsync_DoesNotMixTenantMembershipsBetweenUsers()
+    {
+        const string providerName = "Google";
+        var firstTenants = new[] { new TenantMembership(Guid.NewGuid()) };
+        var secondTenants = new[] { new TenantMembership(Guid.NewGuid()) };
+        var firstUser = CreateUser(firstTenants);
+        var secondUser = CreateUser(secondTenants);
+
+        var provider = new Mock<IFederatedAuthenticationProvider>(MockBehavior.Strict);
+        provider.SetupGet(item => item.Provider).Returns(providerName);
+        provider
+            .SetupSequence(item => item.AuthenticateAsync(
+                It.IsAny<FederatedAuthenticationRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<FederatedIdentity>.Success(
+                new FederatedIdentity(providerName, "first-subject", "first@example.com")))
+            .ReturnsAsync(Result<FederatedIdentity>.Success(
+                new FederatedIdentity(providerName, "second-subject", "second@example.com")));
+
+        var userStore = new Mock<IFederatedUserStore>(MockBehavior.Strict);
+        userStore
+            .Setup(store => store.FindByFederatedIdentityAsync(providerName, "first-subject", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(firstUser);
+        userStore
+            .Setup(store => store.FindByFederatedIdentityAsync(providerName, "second-subject", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(secondUser);
+
+        var service = new FederatedAuthenticationService([provider.Object], userStore.Object);
+
+        Result<AuthenticatedUser> firstResult = await service.AuthenticateAsync(
+            new FederatedAuthenticationRequest(providerName, "credential"));
+        Result<AuthenticatedUser> secondResult = await service.AuthenticateAsync(
+            new FederatedAuthenticationRequest(providerName, "credential"));
+
+        firstResult.Value.Tenants.Should().BeEquivalentTo(firstTenants);
+        firstResult.Value.Tenants.Should().NotContain(secondTenants);
+        secondResult.Value.Tenants.Should().BeEquivalentTo(secondTenants);
+        secondResult.Value.Tenants.Should().NotContain(firstTenants);
+    }
+
+    [Test]
+    public async Task AuthenticateAsync_DoesNotExposeTheUserStoreTenantCollection()
+    {
+        const string providerName = "Microsoft";
+        var tenants = new List<TenantMembership>
+        {
+            new(Guid.NewGuid()),
+            new(Guid.NewGuid())
+        };
+        var user = CreateUser(tenants);
+
+        var provider = new Mock<IFederatedAuthenticationProvider>(MockBehavior.Strict);
+        provider.SetupGet(item => item.Provider).Returns(providerName);
+        provider
+            .Setup(item => item.AuthenticateAsync(It.IsAny<FederatedAuthenticationRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<FederatedIdentity>.Success(
+                new FederatedIdentity(providerName, "subject", "user@example.com")));
+
+        var userStore = new Mock<IFederatedUserStore>(MockBehavior.Strict);
+        userStore
+            .Setup(store => store.FindByFederatedIdentityAsync(providerName, "subject", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+
+        var service = new FederatedAuthenticationService([provider.Object], userStore.Object);
+
+        Result<AuthenticatedUser> result = await service.AuthenticateAsync(
+            new FederatedAuthenticationRequest(providerName, "credential"));
+        tenants.Clear();
+
+        result.Value.Tenants.Should().HaveCount(2);
+    }
+
+    [Test]
     public async Task AuthenticateAsync_WhenIdentityProviderDoesNotMatchRequestedProvider_DoesNotAuthenticateUser()
     {
-        // Arrange
         var provider = new Mock<IFederatedAuthenticationProvider>(MockBehavior.Strict);
         provider.SetupGet(item => item.Provider).Returns("Google");
         provider
@@ -284,11 +389,9 @@ public sealed class FederatedAuthenticationServiceTests
         var userStore = new Mock<IFederatedUserStore>(MockBehavior.Strict);
         var service = new FederatedAuthenticationService([provider.Object], userStore.Object);
 
-        // Act
         Result<AuthenticatedUser> result = await service.AuthenticateAsync(
             new FederatedAuthenticationRequest("Google", "credential"));
 
-        // Assert
         result.IsFailure.Should().BeTrue();
         result.Error.Code.Should().Be("Auth.FederatedProviderMismatch");
         userStore.VerifyNoOtherCalls();
@@ -299,7 +402,6 @@ public sealed class FederatedAuthenticationServiceTests
     [TestCase("Apple")]
     public async Task AuthenticateAsync_PreservesProviderAndSubjectAsTheExternalIdentityKey(string providerName)
     {
-        // Arrange
         var identity = new FederatedIdentity(providerName, "subject-123", "user@example.com");
         var user = CreateUser([new TenantMembership(Guid.NewGuid())]);
         var provider = new Mock<IFederatedAuthenticationProvider>(MockBehavior.Strict);
@@ -313,11 +415,9 @@ public sealed class FederatedAuthenticationServiceTests
             .ReturnsAsync(user);
         var service = new FederatedAuthenticationService([provider.Object], userStore.Object);
 
-        // Act
         Result<AuthenticatedUser> result = await service.AuthenticateAsync(
             new FederatedAuthenticationRequest(providerName, "credential"));
 
-        // Assert
         result.IsSuccess.Should().BeTrue();
         userStore.Verify(
             store => store.FindByFederatedIdentityAsync(providerName, "subject-123", It.IsAny<CancellationToken>()),
