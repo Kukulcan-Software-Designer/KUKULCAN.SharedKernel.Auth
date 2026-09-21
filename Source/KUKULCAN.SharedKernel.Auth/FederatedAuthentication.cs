@@ -8,6 +8,15 @@ public sealed record FederatedAuthenticationRequest(string Provider, string Cred
 /// <summary>Represents an identity returned by a federated authentication provider.</summary>
 public sealed record FederatedIdentity(string Provider, string Subject, string? Email);
 
+/// <summary>Validates credentials supplied by a federated identity provider.</summary>
+public interface IFederatedCredentialValidator
+{
+    /// <summary>Validates an external credential and returns its stable identity.</summary>
+    Task<Result<FederatedIdentity>> ValidateAsync(
+        string credential,
+        CancellationToken cancellationToken = default);
+}
+
 /// <summary>Authenticates credentials against an external identity provider.</summary>
 public interface IFederatedAuthenticationProvider
 {
