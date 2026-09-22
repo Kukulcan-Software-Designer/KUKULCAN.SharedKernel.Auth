@@ -24,8 +24,4 @@
     <PackageReference Include="Testcontainers.PostgreSql" Version="4.*" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="TestResults\" />
-  </ItemGroup>
-
 </Project>

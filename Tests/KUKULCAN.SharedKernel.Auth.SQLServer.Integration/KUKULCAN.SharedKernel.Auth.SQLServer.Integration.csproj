@@ -8,12 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../../../KUKULCAN.SharedKernel/Source/KUKULCAN.SharedKernel/KUKULCAN.SharedKernel.csproj" />
-    <ProjectReference Include="../../../../KUKULCAN.SharedKernel.Database/Source/KUKULCAN.SharedKernel.Database/KUKULCAN.SharedKernel.Database.csproj" />
-    <ProjectReference Include="../../../Source/KUKULCAN.SharedKernel.Auth/KUKULCAN.SharedKernel.Auth.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <PackageReference Include="KUKULCAN.SharedKernel.Database" Version="1.0.2" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.*" />
     <PackageReference Include="NUnit" Version="4.*" />
     <PackageReference Include="NUnit3TestAdapter" Version="5.*" />
@@ -26,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="TestResults\" />
+    <ProjectReference Include="..\..\Source\KUKULCAN.SharedKernel.Auth\KUKULCAN.SharedKernel.Auth.csproj" />
   </ItemGroup>
 
 </Project>

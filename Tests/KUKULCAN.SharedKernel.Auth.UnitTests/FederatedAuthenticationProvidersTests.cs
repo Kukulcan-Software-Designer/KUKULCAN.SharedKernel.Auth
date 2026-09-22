@@ -1,6 +1,7 @@
 using FluentAssertions;
 using KUKULCAN.SharedKernel.Results;
 using Moq;
+using NUnit.Framework;
 
 namespace KUKULCAN.SharedKernel.Auth.UnitTests;
 

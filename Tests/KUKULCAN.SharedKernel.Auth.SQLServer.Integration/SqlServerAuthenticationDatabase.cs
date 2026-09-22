@@ -1,3 +1,4 @@
+using NUnit.Framework;
 using Testcontainers.MsSql;
 
 namespace KUKULCAN.SharedKernel.Auth.SQLServer.Integration;

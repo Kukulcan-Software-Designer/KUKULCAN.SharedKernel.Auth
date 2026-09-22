@@ -4,6 +4,7 @@ using FluentAssertions;
 using KUKULCAN.SharedKernel.Auth;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
+using NUnit.Framework;
 
 namespace KUKULCAN.SharedKernel.Auth.UnitTests.Api;
 

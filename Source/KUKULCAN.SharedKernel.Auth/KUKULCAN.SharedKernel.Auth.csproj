@@ -6,8 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../../../KUKULCAN.SharedKernel/Source/KUKULCAN.SharedKernel/KUKULCAN.SharedKernel.csproj" />
-    <ProjectReference Include="../../../../KUKULCAN.SharedKernel.Database/Source/KUKULCAN.SharedKernel.Database/KUKULCAN.SharedKernel.Database.csproj" />
+    <PackageReference Include="KUKULCAN.SharedKernel" Version="1.0.0" />
+    <PackageReference Include="KUKULCAN.SharedKernel.Database" Version="1.0.2" />
   </ItemGroup>
 
 </Project>
