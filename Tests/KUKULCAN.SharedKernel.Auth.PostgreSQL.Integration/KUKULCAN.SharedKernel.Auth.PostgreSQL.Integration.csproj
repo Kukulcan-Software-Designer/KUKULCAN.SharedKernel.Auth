@@ -1,10 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <IsPackable>false</IsPackable>
-    <IsTestProject>true</IsTestProject>
-    <RootNamespace>KUKULCAN.SharedKernel.Auth.PostgreSQL.Integration</RootNamespace>
-    <AssemblyName>KUKULCAN.SharedKernel.Auth.PostgreSQL.Integration</AssemblyName>
+      <TargetFramework>net10.0</TargetFramework>
+      <LangVersion>latestmajor</LangVersion>
+      <Nullable>enable</Nullable>
+      <ImplicitUsings>enable</ImplicitUsings>
+      <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+      <IsPackable>false</IsPackable>
+      <IsTestProject>true</IsTestProject>
+      <RootNamespace>KUKULCAN.SharedKernel.Auth.PostgreSQL.Integration</RootNamespace>
+      <AssemblyName>KUKULCAN.SharedKernel.Auth.PostgreSQL.Integration</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
