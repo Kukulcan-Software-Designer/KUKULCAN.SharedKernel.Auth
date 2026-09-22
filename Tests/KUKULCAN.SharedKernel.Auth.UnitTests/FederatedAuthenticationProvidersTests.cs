@@ -141,6 +141,60 @@ public sealed class FederatedAuthenticationProvidersTests
         validator.VerifyNoOtherCalls();
     }
 
+
+    [TestCase("Google")]
+    [TestCase("Microsoft")]
+    [TestCase("Apple")]
+    public void Constructor_WhenCredentialValidatorIsNull_ThrowsArgumentNullException(string providerName)
+    {
+        Action act = () => CreateProvider(providerName, null!);
+
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [TestCase("Google")]
+    [TestCase("Microsoft")]
+    [TestCase("Apple")]
+    public async Task AuthenticateAsync_WhenValidatorThrows_PropagatesTheValidatorException(string providerName)
+    {
+        const string credential = "external-credential";
+        var expectedException = new InvalidOperationException("Validator failure.");
+        var validator = new Mock<IFederatedCredentialValidator>(MockBehavior.Strict);
+        validator
+            .Setup(item => item.ValidateAsync(credential, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(expectedException);
+        var provider = CreateProvider(providerName, validator.Object);
+
+        Func<Task> act = () => provider.AuthenticateAsync(
+            new FederatedAuthenticationRequest(providerName, credential));
+
+        var exception = await act.Should().ThrowAsync<InvalidOperationException>();
+        exception.Which.Should().BeSameAs(expectedException);
+    }
+
+    [TestCase("Google")]
+    [TestCase("Microsoft")]
+    [TestCase("Apple")]
+    public async Task AuthenticateAsync_WhenRequestedProviderDiffersOnlyByCase_DelegatesToValidator(string providerName)
+    {
+        const string credential = "external-credential";
+        var identity = new FederatedIdentity(providerName, "stable-subject", "user@example.com");
+        var validator = new Mock<IFederatedCredentialValidator>(MockBehavior.Strict);
+        validator
+            .Setup(item => item.ValidateAsync(credential, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<FederatedIdentity>.Success(identity));
+        var provider = CreateProvider(providerName, validator.Object);
+
+        Result<FederatedIdentity> result = await provider.AuthenticateAsync(
+            new FederatedAuthenticationRequest(providerName.ToUpperInvariant(), credential));
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().Be(identity);
+        validator.Verify(
+            item => item.ValidateAsync(credential, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
     private static IFederatedAuthenticationProvider CreateProvider(
         string providerName,
         IFederatedCredentialValidator validator)
