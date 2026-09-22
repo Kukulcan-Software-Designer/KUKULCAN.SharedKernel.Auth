@@ -157,6 +157,109 @@ public sealed class SqlServerLocalAuthenticationIntegrationTests
         Assert.That(user, Is.Null);
     }
 
+
+    [Test]
+    public async Task UserIdentity_CannotBePersistedTwiceWithTheSameUserId()
+    {
+        await using var context = await AuthDbContextFactory.CreateAsync(
+            SqlServerAuthenticationDatabase.ConnectionString,
+            Guid.NewGuid());
+
+        var userId = Guid.NewGuid();
+
+        context.Users.AddRange(
+            new AuthUserEntity
+            {
+                UserId = userId,
+                Email = "first@example.com",
+                PasswordHash = "first-hash"
+            },
+            new AuthUserEntity
+            {
+                UserId = userId,
+                Email = "second@example.com",
+                PasswordHash = "second-hash"
+            });
+
+        Assert.ThrowsAsync<DbUpdateException>(
+            async () => await context.SaveChangesAsync());
+    }
+
+    [Test]
+    public async Task UserEmail_MustBeUniqueAcrossLocalUsers()
+    {
+        await using var context = await AuthDbContextFactory.CreateAsync(
+            SqlServerAuthenticationDatabase.ConnectionString,
+            Guid.NewGuid());
+
+        context.Users.AddRange(
+            new AuthUserEntity
+            {
+                UserId = Guid.NewGuid(),
+                Email = "duplicate@example.com",
+                PasswordHash = "first-hash"
+            },
+            new AuthUserEntity
+            {
+                UserId = Guid.NewGuid(),
+                Email = "duplicate@example.com",
+                PasswordHash = "second-hash"
+            });
+
+        Assert.ThrowsAsync<DbUpdateException>(
+            async () => await context.SaveChangesAsync());
+    }
+
+    [Test]
+    public async Task TenantMembership_CannotBePersistedTwiceForTheSameUserAndTenant()
+    {
+        await using var context = await AuthDbContextFactory.CreateAsync(
+            SqlServerAuthenticationDatabase.ConnectionString,
+            Guid.NewGuid());
+
+        var userId = Guid.NewGuid();
+        var tenantId = Guid.NewGuid();
+
+        context.Users.Add(new AuthUserEntity
+        {
+            UserId = userId,
+            Email = "duplicate-membership@example.com",
+            PasswordHash = "stored-password-hash"
+        });
+
+        context.TenantMemberships.AddRange(
+            new AuthTenantMembershipEntity
+            {
+                UserId = userId,
+                TenantId = tenantId
+            },
+            new AuthTenantMembershipEntity
+            {
+                UserId = userId,
+                TenantId = tenantId
+            });
+
+        Assert.ThrowsAsync<DbUpdateException>(
+            async () => await context.SaveChangesAsync());
+    }
+
+    [Test]
+    public async Task TenantMembership_MustReferenceAnExistingUser()
+    {
+        await using var context = await AuthDbContextFactory.CreateAsync(
+            SqlServerAuthenticationDatabase.ConnectionString,
+            Guid.NewGuid());
+
+        context.TenantMemberships.Add(new AuthTenantMembershipEntity
+        {
+            UserId = Guid.NewGuid(),
+            TenantId = Guid.NewGuid()
+        });
+
+        Assert.ThrowsAsync<DbUpdateException>(
+            async () => await context.SaveChangesAsync());
+    }
+
     [Test]
     public async Task FindByEmailAsync_WhenCancellationIsRequested_PropagatesCancellation()
     {
