@@ -156,4 +156,22 @@ public sealed class SqlServerLocalAuthenticationIntegrationTests
 
         Assert.That(user, Is.Null);
     }
+
+    [Test]
+    public async Task FindByEmailAsync_WhenCancellationIsRequested_PropagatesCancellation()
+    {
+        using var cancellationSource = new CancellationTokenSource();
+        cancellationSource.Cancel();
+
+        await using var context = await AuthDbContextFactory.CreateAsync(
+            SqlServerAuthenticationDatabase.ConnectionString,
+            Guid.NewGuid());
+
+        var store = new LocalUserStore(context);
+
+        Assert.ThrowsAsync<OperationCanceledException>(
+            async () => await store.FindByEmailAsync(
+                "user@example.com",
+                cancellationSource.Token));
+    }
 }
