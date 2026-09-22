@@ -8,12 +8,14 @@ public sealed class SqlServerLocalAuthenticationIntegrationTests
     public async Task FindByEmailAsync_WithPersistedUser_ReturnsUserAndAllTenantMemberships()
     {
         // This test intentionally defines the SQL Server persistence contract before its implementation.
-        await using var context = await AuthDbContextFactory.CreateAsync(
-            SqlServerAuthenticationDatabase.ConnectionString);
-
-        var userId = Guid.NewGuid();
         var firstTenantId = Guid.NewGuid();
         var secondTenantId = Guid.NewGuid();
+
+        await using var context = await AuthDbContextFactory.CreateAsync(
+            SqlServerAuthenticationDatabase.ConnectionString,
+            activeTenantId: firstTenantId);
+
+        var userId = Guid.NewGuid();
 
         context.Users.Add(new AuthUserEntity
         {
@@ -54,14 +56,16 @@ public sealed class SqlServerLocalAuthenticationIntegrationTests
     {
         // Authentication must resolve the user's complete tenant membership set rather than
         // restricting the lookup to a single active tenant.
-        await using var context = await AuthDbContextFactory.CreateAsync(
-            SqlServerAuthenticationDatabase.ConnectionString);
-
-        var requestedUserId = Guid.NewGuid();
-        var otherUserId = Guid.NewGuid();
         var requestedFirstTenantId = Guid.NewGuid();
         var requestedSecondTenantId = Guid.NewGuid();
         var otherTenantId = Guid.NewGuid();
+
+        await using var context = await AuthDbContextFactory.CreateAsync(
+            SqlServerAuthenticationDatabase.ConnectionString,
+            activeTenantId: requestedFirstTenantId);
+
+        var requestedUserId = Guid.NewGuid();
+        var otherUserId = Guid.NewGuid();
 
         context.Users.AddRange(
             new AuthUserEntity
@@ -108,5 +112,48 @@ public sealed class SqlServerLocalAuthenticationIntegrationTests
         Assert.That(
             user.Tenants.Select(x => x.TenantId),
             Does.Not.Contain(otherTenantId));
+    }
+
+    [Test]
+    public async Task FindByEmailAsync_WithPersistedUserWithoutTenantMemberships_ReturnsUserWithEmptyTenantCollection()
+    {
+        var activeTenantId = Guid.NewGuid();
+
+        await using var context = await AuthDbContextFactory.CreateAsync(
+            SqlServerAuthenticationDatabase.ConnectionString,
+            activeTenantId);
+
+        var userId = Guid.NewGuid();
+
+        context.Users.Add(new AuthUserEntity
+        {
+            UserId = userId,
+            Email = "without-tenants@example.com",
+            PasswordHash = "stored-password-hash"
+        });
+
+        await context.SaveChangesAsync();
+
+        var store = new LocalUserStore(context);
+
+        var user = await store.FindByEmailAsync("without-tenants@example.com");
+
+        Assert.That(user, Is.Not.Null);
+        Assert.That(user!.UserId, Is.EqualTo(userId));
+        Assert.That(user.Tenants, Is.Empty);
+    }
+
+    [Test]
+    public async Task FindByEmailAsync_WithUnknownEmail_ReturnsNull()
+    {
+        await using var context = await AuthDbContextFactory.CreateAsync(
+            SqlServerAuthenticationDatabase.ConnectionString,
+            Guid.NewGuid());
+
+        var store = new LocalUserStore(context);
+
+        var user = await store.FindByEmailAsync("unknown@example.com");
+
+        Assert.That(user, Is.Null);
     }
 }
