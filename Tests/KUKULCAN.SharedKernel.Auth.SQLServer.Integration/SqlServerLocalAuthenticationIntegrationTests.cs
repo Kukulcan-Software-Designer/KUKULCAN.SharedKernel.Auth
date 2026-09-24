@@ -330,4 +330,98 @@ public sealed class SqlServerLocalAuthenticationIntegrationTests
             Is.EquivalentTo(new[] { firstTenantId, secondTenantId }));
     }
 
+    [Test]
+    public async Task UserDeletion_CascadesToTenantMemberships()
+    {
+        var tenantId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+
+        await using var context = await AuthDbContextFactory.CreateAsync(
+            SqlServerAuthenticationDatabase.ConnectionString,
+            tenantId);
+
+        context.Users.Add(new AuthUserEntity
+        {
+            UserId = userId,
+            Email = "cascade-delete@example.com",
+            PasswordHash = "stored-password-hash"
+        });
+
+        context.TenantMemberships.AddRange(
+            new AuthTenantMembershipEntity
+            {
+                UserId = userId,
+                TenantId = tenantId
+            },
+            new AuthTenantMembershipEntity
+            {
+                UserId = userId,
+                TenantId = Guid.NewGuid()
+            });
+
+        await context.SaveChangesAsync();
+
+        context.Users.Remove(new AuthUserEntity { UserId = userId });
+        await context.SaveChangesAsync();
+
+        await using var verificationContext = await AuthDbContextFactory.CreateAsync(
+            SqlServerAuthenticationDatabase.ConnectionString,
+            tenantId);
+
+        var memberships = await verificationContext.TenantMemberships
+            .IgnoreQueryFilters()
+            .Where(entity => entity.UserId == userId)
+            .ToArrayAsync();
+
+        Assert.That(memberships, Is.Empty);
+    }
+
+    [Test]
+    public async Task NormalTenantMembershipQueries_RespectActiveTenantFilter_WhileLocalUserStoreReturnsAllMemberships()
+    {
+        var activeTenantId = Guid.NewGuid();
+        var otherTenantId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+
+        await using var context = await AuthDbContextFactory.CreateAsync(
+            SqlServerAuthenticationDatabase.ConnectionString,
+            activeTenantId);
+
+        context.Users.Add(new AuthUserEntity
+        {
+            UserId = userId,
+            Email = "tenant-filter@example.com",
+            PasswordHash = "stored-password-hash"
+        });
+
+        context.TenantMemberships.AddRange(
+            new AuthTenantMembershipEntity
+            {
+                UserId = userId,
+                TenantId = activeTenantId
+            },
+            new AuthTenantMembershipEntity
+            {
+                UserId = userId,
+                TenantId = otherTenantId
+            });
+
+        await context.SaveChangesAsync();
+
+        var normalMemberships = await context.TenantMemberships
+            .Where(entity => entity.UserId == userId)
+            .Select(entity => entity.TenantId)
+            .ToArrayAsync();
+
+        Assert.That(normalMemberships, Is.EqualTo(new[] { activeTenantId }));
+
+        var store = new LocalUserStore(context);
+        var authenticatedUser = await store.FindByEmailAsync("tenant-filter@example.com");
+
+        Assert.That(authenticatedUser, Is.Not.Null);
+        Assert.That(
+            authenticatedUser!.Tenants.Select(tenant => tenant.TenantId),
+            Is.EquivalentTo(new[] { activeTenantId, otherTenantId }));
+    }
+
 }
