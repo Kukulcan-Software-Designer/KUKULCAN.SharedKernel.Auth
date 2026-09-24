@@ -28,4 +28,7 @@ public sealed class AuthDbContext : KukulcanDbContextBase
 
     /// <summary>Gets the persisted tenant memberships for local users.</summary>
     public DbSet<AuthTenantMembershipEntity> TenantMemberships => Set<AuthTenantMembershipEntity>();
+
+    /// <summary>Gets the persisted federated identities.</summary>
+    public DbSet<AuthFederatedIdentityEntity> FederatedIdentities => Set<AuthFederatedIdentityEntity>();
 }
