@@ -11,7 +11,8 @@ public sealed class AuthUserEntityConfiguration : IEntityTypeConfiguration<AuthU
         builder.HasKey(entity => entity.UserId);
 
         builder.Property(entity => entity.Email)
-            .IsRequired();
+            .IsRequired()
+            .HasMaxLength(450);
 
         builder.HasIndex(entity => entity.Email)
             .IsUnique();
