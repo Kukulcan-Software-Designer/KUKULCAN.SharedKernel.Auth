@@ -1,6 +1,10 @@
+using KUKULCAN.SharedKernel.Abstractions;
 using KUKULCAN.SharedKernel.Database;
+using KUKULCAN.SharedKernel.Database.Abstractions;
+using KUKULCAN.SharedKernel.DomainEvents.Abstractions;
 using KUKULCAN.SharedKernel.Database.Configuration;
 using KUKULCAN.SharedKernel.Database.Interceptors;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace KUKULCAN.SharedKernel.Auth;
