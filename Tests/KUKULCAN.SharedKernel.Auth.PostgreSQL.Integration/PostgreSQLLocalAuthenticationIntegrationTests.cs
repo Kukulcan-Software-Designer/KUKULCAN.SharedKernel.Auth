@@ -364,11 +364,10 @@ public sealed class PostgreSQLLocalAuthenticationIntegrationTests
         context.Users.Remove(new AuthUserEntity { UserId = userId });
         await context.SaveChangesAsync();
 
-        await using var verificationContext = await AuthDbContextFactory.CreateAsync(
-            PostgreSQLAuthenticationDatabase.ConnectionString,
-            tenantId);
+        // Clear the tracked graph so verification is forced to read the database.
+        context.ChangeTracker.Clear();
 
-        var memberships = await verificationContext.TenantMemberships
+        var memberships = await context.TenantMemberships
             .IgnoreQueryFilters()
             .Where(entity => entity.UserId == userId)
             .ToArrayAsync();
@@ -407,6 +406,9 @@ public sealed class PostgreSQLLocalAuthenticationIntegrationTests
             });
 
         await context.SaveChangesAsync();
+
+        // Avoid tracked entities masking the behavior of the database query filter.
+        context.ChangeTracker.Clear();
 
         var normalMemberships = await context.TenantMemberships
             .Where(entity => entity.UserId == userId)
