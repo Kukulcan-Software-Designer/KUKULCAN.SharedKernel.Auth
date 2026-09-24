@@ -279,4 +279,55 @@ public sealed class MySQLLocalAuthenticationIntegrationTests
                 "user@example.com",
                 cancellationSource.Token));
     }
+    [Test]
+    public async Task AuthenticateAsync_WithCorrectCredentials_ReturnsAuthenticatedUserWithAllTenants()
+    {
+        const string email = "local-auth@example.com";
+        const string password = "CorrectPassword!";
+
+        var firstTenantId = Guid.NewGuid();
+        var secondTenantId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var passwordHasher = new PasswordHasher();
+
+        await using var context = await AuthDbContextFactory.CreateAsync(
+            MySQLAuthenticationDatabase.ConnectionString,
+            activeTenantId: firstTenantId);
+
+        context.Users.Add(new AuthUserEntity
+        {
+            UserId = userId,
+            Email = email,
+            PasswordHash = passwordHasher.Hash(password)
+        });
+
+        context.TenantMemberships.AddRange(
+            new AuthTenantMembershipEntity
+            {
+                UserId = userId,
+                TenantId = firstTenantId
+            },
+            new AuthTenantMembershipEntity
+            {
+                UserId = userId,
+                TenantId = secondTenantId
+            });
+
+        await context.SaveChangesAsync();
+
+        var service = new LocalAuthenticationService(
+            new LocalUserStore(context),
+            passwordHasher);
+
+        var result = await service.AuthenticateAsync(
+            new LocalAuthenticationRequest(email, password));
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value.UserId, Is.EqualTo(userId));
+        Assert.That(result.Value.Email, Is.EqualTo(email));
+        Assert.That(
+            result.Value.Tenants.Select(x => x.TenantId),
+            Is.EquivalentTo(new[] { firstTenantId, secondTenantId }));
+    }
+
 }
