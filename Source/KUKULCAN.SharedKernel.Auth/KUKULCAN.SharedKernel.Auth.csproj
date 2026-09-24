@@ -1,13 +1,23 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <RootNamespace>KUKULCAN.SharedKernel.Auth</RootNamespace>
-    <AssemblyName>KUKULCAN.SharedKernel.Auth</AssemblyName>
+      <TargetFramework>net10.0</TargetFramework>
+      <LangVersion>latestmajor</LangVersion>
+      <Nullable>enable</Nullable>
+      <ImplicitUsings>enable</ImplicitUsings>
+      <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+      <RootNamespace>KUKULCAN.SharedKernel.Auth</RootNamespace>
+      <AssemblyName>KUKULCAN.SharedKernel.Auth</AssemblyName>
+      <SolutionDir>$(MSBuildThisFileDirectory)</SolutionDir>
+      <BaseOutputPath>$(SolutionDir)Bin\$(MSBuildProjectName)\</BaseOutputPath>
+      <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../../../KUKULCAN.SharedKernel/Source/KUKULCAN.SharedKernel/KUKULCAN.SharedKernel.csproj" />
-    <ProjectReference Include="../../../../KUKULCAN.SharedKernel.Database/Source/KUKULCAN.SharedKernel.Database/KUKULCAN.SharedKernel.Database.csproj" />
+    <PackageReference Include="KUKULCAN.SharedKernel" Version="1.0.0" />
+    <PackageReference Include="KUKULCAN.SharedKernel.Database" Version="1.0.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.*" />
+    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="10.*" />
   </ItemGroup>
 
 </Project>

@@ -9,17 +9,38 @@ namespace KUKULCAN.SharedKernel.Auth.UnitTests;
 public sealed class LocalAuthenticationServiceTests
 {
     [Test]
+    public void Constructor_WhenUserStoreIsNull_ThrowsArgumentNullException()
+    {
+        // Act
+        Action act = () => new LocalAuthenticationService(
+            null!,
+            new Mock<IPasswordHasher>(MockBehavior.Strict).Object);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Test]
+    public void Constructor_WhenPasswordHasherIsNull_ThrowsArgumentNullException()
+    {
+        // Act
+        Action act = () => new LocalAuthenticationService(
+            new Mock<ILocalUserStore>(MockBehavior.Strict).Object,
+            null!);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Test]
     public void AuthenticateAsync_WhenRequestIsNull_ThrowsArgumentNullException()
     {
-        // Arrange
         var userStore = new Mock<ILocalUserStore>(MockBehavior.Strict);
         var passwordHasher = new Mock<IPasswordHasher>(MockBehavior.Strict);
         var service = new LocalAuthenticationService(userStore.Object, passwordHasher.Object);
 
-        // Act
         Func<Task> act = () => service.AuthenticateAsync(null!);
 
-        // Assert
         act.Should().ThrowAsync<ArgumentNullException>();
         userStore.VerifyNoOtherCalls();
         passwordHasher.VerifyNoOtherCalls();
@@ -29,16 +50,13 @@ public sealed class LocalAuthenticationServiceTests
     [TestCase("   ")]
     public void AuthenticateAsync_WhenEmailIsEmptyOrWhitespace_ThrowsArgumentException(string email)
     {
-        // Arrange
         var userStore = new Mock<ILocalUserStore>(MockBehavior.Strict);
         var passwordHasher = new Mock<IPasswordHasher>(MockBehavior.Strict);
         var service = new LocalAuthenticationService(userStore.Object, passwordHasher.Object);
 
-        // Act
         Func<Task> act = () => service.AuthenticateAsync(
             new LocalAuthenticationRequest(email, "CorrectPassword!"));
 
-        // Assert
         act.Should().ThrowAsync<ArgumentException>();
         userStore.VerifyNoOtherCalls();
         passwordHasher.VerifyNoOtherCalls();
@@ -48,17 +66,14 @@ public sealed class LocalAuthenticationServiceTests
     [TestCase("   ")]
     public void AuthenticateAsync_WhenPasswordIsEmptyOrWhitespace_ThrowsArgumentException(string password)
     {
-        // Arrange
         const string email = "user@example.com";
         var userStore = new Mock<ILocalUserStore>(MockBehavior.Strict);
         var passwordHasher = new Mock<IPasswordHasher>(MockBehavior.Strict);
         var service = new LocalAuthenticationService(userStore.Object, passwordHasher.Object);
 
-        // Act
         Func<Task> act = () => service.AuthenticateAsync(
             new LocalAuthenticationRequest(email, password));
 
-        // Assert
         act.Should().ThrowAsync<ArgumentException>();
         userStore.VerifyNoOtherCalls();
         passwordHasher.VerifyNoOtherCalls();
@@ -67,7 +82,6 @@ public sealed class LocalAuthenticationServiceTests
     [Test]
     public async Task AuthenticateAsync_NormalizesEmailBeforeLookingUpUser()
     {
-        // Arrange
         const string suppliedEmail = "  USER@Example.COM  ";
         const string normalizedEmail = "user@example.com";
         const string password = "CorrectPassword!";
@@ -89,11 +103,9 @@ public sealed class LocalAuthenticationServiceTests
 
         var service = new LocalAuthenticationService(userStore.Object, passwordHasher.Object);
 
-        // Act
         Result<AuthenticatedUser> result = await service.AuthenticateAsync(
             new LocalAuthenticationRequest(suppliedEmail, password));
 
-        // Assert
         result.IsSuccess.Should().BeTrue();
         userStore.Verify(
             store => store.FindByEmailAsync(normalizedEmail, It.IsAny<CancellationToken>()),
@@ -103,7 +115,6 @@ public sealed class LocalAuthenticationServiceTests
     [Test]
     public async Task AuthenticateAsync_PropagatesCancellationTokenToUserStore()
     {
-        // Arrange
         const string email = "user@example.com";
         const string password = "CorrectPassword!";
         using var cancellationSource = new CancellationTokenSource();
@@ -116,12 +127,10 @@ public sealed class LocalAuthenticationServiceTests
         var passwordHasher = new Mock<IPasswordHasher>(MockBehavior.Strict);
         var service = new LocalAuthenticationService(userStore.Object, passwordHasher.Object);
 
-        // Act
         Result<AuthenticatedUser> result = await service.AuthenticateAsync(
             new LocalAuthenticationRequest(email, password),
             cancellationToken);
 
-        // Assert
         result.IsSuccess.Should().BeFalse();
         userStore.Verify(
             store => store.FindByEmailAsync(email, cancellationToken),
@@ -129,9 +138,34 @@ public sealed class LocalAuthenticationServiceTests
     }
 
     [Test]
+    public async Task AuthenticateAsync_WhenUserStoreIsCanceled_PropagatesOperationCanceledException()
+    {
+        const string email = "user@example.com";
+        const string password = "CorrectPassword!";
+        using var cancellationSource = new CancellationTokenSource();
+        var cancellationToken = cancellationSource.Token;
+        var cancellationException = new OperationCanceledException(cancellationToken);
+
+        var userStore = new Mock<ILocalUserStore>(MockBehavior.Strict);
+        userStore
+            .Setup(store => store.FindByEmailAsync(email, cancellationToken))
+            .ThrowsAsync(cancellationException);
+
+        var passwordHasher = new Mock<IPasswordHasher>(MockBehavior.Strict);
+        var service = new LocalAuthenticationService(userStore.Object, passwordHasher.Object);
+
+        Func<Task> act = () => service.AuthenticateAsync(
+            new LocalAuthenticationRequest(email, password),
+            cancellationToken);
+
+        var exception = await act.Should().ThrowAsync<OperationCanceledException>();
+        exception.Which.CancellationToken.Should().Be(cancellationToken);
+        passwordHasher.VerifyNoOtherCalls();
+    }
+
+    [Test]
     public async Task AuthenticateAsync_DoesNotMixTenantMembershipsBetweenUsers()
     {
-        // Arrange
         const string firstEmail = "first@example.com";
         const string secondEmail = "second@example.com";
         const string password = "CorrectPassword!";
@@ -166,13 +200,11 @@ public sealed class LocalAuthenticationServiceTests
 
         var service = new LocalAuthenticationService(userStore.Object, passwordHasher.Object);
 
-        // Act
         Result<AuthenticatedUser> firstResult = await service.AuthenticateAsync(
             new LocalAuthenticationRequest(firstEmail, password));
         Result<AuthenticatedUser> secondResult = await service.AuthenticateAsync(
             new LocalAuthenticationRequest(secondEmail, password));
 
-        // Assert
         firstResult.Value.Tenants.Select(tenant => tenant.TenantId)
             .Should().BeEquivalentTo(firstTenantIds);
         firstResult.Value.Tenants.Select(tenant => tenant.TenantId)
@@ -186,7 +218,6 @@ public sealed class LocalAuthenticationServiceTests
     [Test]
     public async Task AuthenticateAsync_ReturnsTenantMembershipsWithoutExposingTheUserStoreCollection()
     {
-        // Arrange
         const string email = "user@example.com";
         const string password = "CorrectPassword!";
         var tenantMemberships = new List<TenantMembership>
@@ -212,19 +243,16 @@ public sealed class LocalAuthenticationServiceTests
 
         var service = new LocalAuthenticationService(userStore.Object, passwordHasher.Object);
 
-        // Act
         Result<AuthenticatedUser> result = await service.AuthenticateAsync(
             new LocalAuthenticationRequest(email, password));
         tenantMemberships.Clear();
 
-        // Assert
         result.Value.Tenants.Should().HaveCount(2);
     }
 
     [Test]
     public async Task AuthenticateAsync_WithValidCredentials_ReturnsAuthenticatedUserWithItsTenant()
     {
-        // Arrange
         const string email = "user@example.com";
         const string password = "CorrectPassword!";
         var tenantId = Guid.NewGuid();
@@ -246,11 +274,9 @@ public sealed class LocalAuthenticationServiceTests
 
         var service = new LocalAuthenticationService(userStore.Object, passwordHasher.Object);
 
-        // Act
         Result<AuthenticatedUser> result = await service.AuthenticateAsync(
             new LocalAuthenticationRequest(email, password));
 
-        // Assert
         result.IsSuccess.Should().BeTrue();
         result.Value.UserId.Should().Be(user.UserId);
         result.Value.Email.Should().Be(user.Email);
@@ -268,7 +294,6 @@ public sealed class LocalAuthenticationServiceTests
     [Test]
     public async Task AuthenticateAsync_WithValidCredentials_ReturnsAllUserTenants()
     {
-        // Arrange
         const string email = "user@example.com";
         const string password = "CorrectPassword!";
         var tenantIds = new[] { Guid.NewGuid(), Guid.NewGuid() };
@@ -290,20 +315,82 @@ public sealed class LocalAuthenticationServiceTests
 
         var service = new LocalAuthenticationService(userStore.Object, passwordHasher.Object);
 
-        // Act
         Result<AuthenticatedUser> result = await service.AuthenticateAsync(
             new LocalAuthenticationRequest(email, password));
 
-        // Assert
         result.IsSuccess.Should().BeTrue();
         result.Value.Tenants.Select(tenant => tenant.TenantId)
             .Should().BeEquivalentTo(tenantIds);
     }
 
     [Test]
+    public async Task AuthenticateAsync_WhenReturnedUserEmailDiffersFromLookupEmail_ReturnsStoreEmail()
+    {
+        const string lookupEmail = "lookup@example.com";
+        const string storedEmail = "canonical@example.com";
+        const string password = "CorrectPassword!";
+        var user = new LocalUser(
+            Guid.NewGuid(),
+            storedEmail,
+            "stored-password-hash",
+            [new TenantMembership(Guid.NewGuid())]);
+
+        var userStore = new Mock<ILocalUserStore>(MockBehavior.Strict);
+        userStore
+            .Setup(store => store.FindByEmailAsync(lookupEmail, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+
+        var passwordHasher = new Mock<IPasswordHasher>(MockBehavior.Strict);
+        passwordHasher
+            .Setup(hasher => hasher.Verify(password, user.PasswordHash))
+            .Returns(true);
+
+        var service = new LocalAuthenticationService(userStore.Object, passwordHasher.Object);
+
+        Result<AuthenticatedUser> result = await service.AuthenticateAsync(
+            new LocalAuthenticationRequest(lookupEmail, password));
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Email.Should().Be(storedEmail);
+    }
+
+    [Test]
+    public async Task AuthenticateAsync_WhenUserHasDuplicateTenants_PreservesStoreMemberships()
+    {
+        const string email = "user@example.com";
+        const string password = "CorrectPassword!";
+        var tenantId = Guid.NewGuid();
+        var memberships = new[]
+        {
+            new TenantMembership(tenantId),
+            new TenantMembership(tenantId)
+        };
+        var user = new LocalUser(Guid.NewGuid(), email, "stored-password-hash", memberships);
+
+        var userStore = new Mock<ILocalUserStore>(MockBehavior.Strict);
+        userStore
+            .Setup(store => store.FindByEmailAsync(email, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+
+        var passwordHasher = new Mock<IPasswordHasher>(MockBehavior.Strict);
+        passwordHasher
+            .Setup(hasher => hasher.Verify(password, user.PasswordHash))
+            .Returns(true);
+
+        var service = new LocalAuthenticationService(userStore.Object, passwordHasher.Object);
+
+        Result<AuthenticatedUser> result = await service.AuthenticateAsync(
+            new LocalAuthenticationRequest(email, password));
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Tenants.Should().HaveCount(2);
+        result.Value.Tenants.Select(tenant => tenant.TenantId)
+            .Should().OnlyContain(id => id == tenantId);
+    }
+
+    [Test]
     public async Task AuthenticateAsync_WhenUserHasNoTenant_ReturnsFailure()
     {
-        // Arrange
         const string email = "user@example.com";
         const string password = "CorrectPassword!";
         var user = new LocalUser(
@@ -324,20 +411,17 @@ public sealed class LocalAuthenticationServiceTests
 
         var service = new LocalAuthenticationService(userStore.Object, passwordHasher.Object);
 
-        // Act
         Result<AuthenticatedUser> result = await service.AuthenticateAsync(
             new LocalAuthenticationRequest(email, password));
 
-        // Assert
-        result.IsSuccess.Should().BeFalse();
+        result.IsFailure.Should().BeTrue();
         result.Error.Code.Should().Be("Auth.NoTenantAccess");
-        result.Value.Should().BeNull();
+        result.Error.Description.Should().Be("The user does not belong to any tenant.");
     }
 
     [Test]
     public async Task AuthenticateAsync_WhenUserDoesNotExist_ReturnsInvalidCredentials()
     {
-        // Arrange
         const string email = "unknown@example.com";
         const string password = "AnyPassword!";
 
@@ -349,14 +433,12 @@ public sealed class LocalAuthenticationServiceTests
         var passwordHasher = new Mock<IPasswordHasher>(MockBehavior.Strict);
         var service = new LocalAuthenticationService(userStore.Object, passwordHasher.Object);
 
-        // Act
         Result<AuthenticatedUser> result = await service.AuthenticateAsync(
             new LocalAuthenticationRequest(email, password));
 
-        // Assert
-        result.IsSuccess.Should().BeFalse();
+        result.IsFailure.Should().BeTrue();
         result.Error.Code.Should().Be("Auth.InvalidCredentials");
-        result.Value.Should().BeNull();
+        result.Error.Description.Should().Be("The supplied credentials are invalid.");
 
         passwordHasher.Verify(
             hasher => hasher.Verify(It.IsAny<string>(), It.IsAny<string>()),
@@ -366,7 +448,6 @@ public sealed class LocalAuthenticationServiceTests
     [Test]
     public async Task AuthenticateAsync_WhenPasswordIsIncorrect_ReturnsInvalidCredentials()
     {
-        // Arrange
         const string email = "user@example.com";
         const string password = "IncorrectPassword!";
         var user = new LocalUser(
@@ -387,17 +468,184 @@ public sealed class LocalAuthenticationServiceTests
 
         var service = new LocalAuthenticationService(userStore.Object, passwordHasher.Object);
 
-        // Act
         Result<AuthenticatedUser> result = await service.AuthenticateAsync(
             new LocalAuthenticationRequest(email, password));
 
-        // Assert
-        result.IsSuccess.Should().BeFalse();
+        result.IsFailure.Should().BeTrue();
         result.Error.Code.Should().Be("Auth.InvalidCredentials");
-        result.Value.Should().BeNull();
+        result.Error.Description.Should().Be("The supplied credentials are invalid.");
 
         passwordHasher.Verify(
             hasher => hasher.Verify(password, user.PasswordHash),
             Times.Once);
+    }
+
+    [Test]
+    public async Task AuthenticateAsync_WhenUserDoesNotExist_DoesNotVerifyPassword()
+    {
+        const string email = "unknown@example.com";
+        const string password = "AnyPassword!";
+        var userStore = new Mock<ILocalUserStore>(MockBehavior.Strict);
+        userStore
+            .Setup(store => store.FindByEmailAsync(email, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((LocalUser?)null);
+        var passwordHasher = new Mock<IPasswordHasher>(MockBehavior.Strict);
+        var service = new LocalAuthenticationService(userStore.Object, passwordHasher.Object);
+
+        Result<AuthenticatedUser> result = await service.AuthenticateAsync(
+            new LocalAuthenticationRequest(email, password));
+
+        result.Error.Code.Should().Be("Auth.InvalidCredentials");
+        passwordHasher.VerifyNoOtherCalls();
+    }
+
+    [Test]
+    public async Task AuthenticateAsync_WhenPasswordIsIncorrect_ReturnsSameErrorAsUnknownUser()
+    {
+        const string password = "IncorrectPassword!";
+        var unknownStore = new Mock<ILocalUserStore>(MockBehavior.Strict);
+        unknownStore
+            .Setup(store => store.FindByEmailAsync("unknown@example.com", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((LocalUser?)null);
+        var unknownHasher = new Mock<IPasswordHasher>(MockBehavior.Strict);
+        var unknownService = new LocalAuthenticationService(unknownStore.Object, unknownHasher.Object);
+
+        var existingUser = new LocalUser(
+            Guid.NewGuid(),
+            "user@example.com",
+            "stored-password-hash",
+            [new TenantMembership(Guid.NewGuid())]);
+        var existingStore = new Mock<ILocalUserStore>(MockBehavior.Strict);
+        existingStore
+            .Setup(store => store.FindByEmailAsync(existingUser.Email, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingUser);
+        var existingHasher = new Mock<IPasswordHasher>(MockBehavior.Strict);
+        existingHasher
+            .Setup(hasher => hasher.Verify(password, existingUser.PasswordHash))
+            .Returns(false);
+        var existingService = new LocalAuthenticationService(existingStore.Object, existingHasher.Object);
+
+        Result<AuthenticatedUser> unknownResult = await unknownService.AuthenticateAsync(
+            new LocalAuthenticationRequest("unknown@example.com", password));
+        Result<AuthenticatedUser> incorrectPasswordResult = await existingService.AuthenticateAsync(
+            new LocalAuthenticationRequest(existingUser.Email, password));
+
+        incorrectPasswordResult.IsFailure.Should().BeTrue();
+        incorrectPasswordResult.Error.Should().Be(unknownResult.Error);
+    }
+
+    [Test]
+    public async Task AuthenticateAsync_WhenSuccessful_DoesNotExposePasswordHash()
+    {
+        const string passwordHash = "stored-password-hash";
+        var user = new LocalUser(
+            Guid.NewGuid(),
+            "user@example.com",
+            passwordHash,
+            [new TenantMembership(Guid.NewGuid())]);
+        var userStore = new Mock<ILocalUserStore>(MockBehavior.Strict);
+        userStore
+            .Setup(store => store.FindByEmailAsync(user.Email, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+        var passwordHasher = new Mock<IPasswordHasher>(MockBehavior.Strict);
+        passwordHasher
+            .Setup(hasher => hasher.Verify("CorrectPassword!", passwordHash))
+            .Returns(true);
+        var service = new LocalAuthenticationService(userStore.Object, passwordHasher.Object);
+
+        Result<AuthenticatedUser> result = await service.AuthenticateAsync(
+            new LocalAuthenticationRequest(user.Email, "CorrectPassword!"));
+
+        result.Value.Should().NotBeNull();
+        result.Value.Should().BeOfType<AuthenticatedUser>();
+        result.Value.Email.Should().Be(user.Email);
+        result.Value.Tenants.Should().BeEquivalentTo(user.Tenants);
+        result.Value.GetType().GetProperties()
+            .Select(property => property.Name)
+            .Should().NotContain(nameof(LocalUser.PasswordHash));
+    }
+
+    [Test]
+    public async Task AuthenticateAsync_WhenUserStoreThrows_PropagatesTheStoreException()
+    {
+        const string email = "user@example.com";
+        const string password = "CorrectPassword!";
+        var expectedException = new InvalidOperationException("Store failure.");
+
+        var userStore = new Mock<ILocalUserStore>(MockBehavior.Strict);
+        userStore
+            .Setup(store => store.FindByEmailAsync(email, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(expectedException);
+
+        var passwordHasher = new Mock<IPasswordHasher>(MockBehavior.Strict);
+        var service = new LocalAuthenticationService(userStore.Object, passwordHasher.Object);
+
+        Func<Task> act = () => service.AuthenticateAsync(
+            new LocalAuthenticationRequest(email, password));
+
+        var exception = await act.Should().ThrowAsync<InvalidOperationException>();
+        exception.Which.Should().BeSameAs(expectedException);
+        passwordHasher.VerifyNoOtherCalls();
+    }
+
+    [Test]
+    public async Task AuthenticateAsync_WhenPasswordHasherThrows_PropagatesTheHasherException()
+    {
+        const string email = "user@example.com";
+        const string password = "CorrectPassword!";
+        var user = new LocalUser(
+            Guid.NewGuid(),
+            email,
+            "stored-password-hash",
+            [new TenantMembership(Guid.NewGuid())]);
+        var expectedException = new InvalidOperationException("Hasher failure.");
+
+        var userStore = new Mock<ILocalUserStore>(MockBehavior.Strict);
+        userStore
+            .Setup(store => store.FindByEmailAsync(email, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+
+        var passwordHasher = new Mock<IPasswordHasher>(MockBehavior.Strict);
+        passwordHasher
+            .Setup(hasher => hasher.Verify(password, user.PasswordHash))
+            .Throws(expectedException);
+
+        var service = new LocalAuthenticationService(userStore.Object, passwordHasher.Object);
+
+        Func<Task> act = () => service.AuthenticateAsync(
+            new LocalAuthenticationRequest(email, password));
+
+        var exception = await act.Should().ThrowAsync<InvalidOperationException>();
+        exception.Which.Should().BeSameAs(expectedException);
+    }
+
+    [Test]
+    public async Task AuthenticateAsync_WhenUserHasNoTenants_DoesNotReturnAnAuthenticatedUser()
+    {
+        const string email = "user@example.com";
+        const string password = "CorrectPassword!";
+        var user = new LocalUser(
+            Guid.NewGuid(),
+            email,
+            "stored-password-hash",
+            []);
+
+        var userStore = new Mock<ILocalUserStore>(MockBehavior.Strict);
+        userStore
+            .Setup(store => store.FindByEmailAsync(email, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+
+        var passwordHasher = new Mock<IPasswordHasher>(MockBehavior.Strict);
+        passwordHasher
+            .Setup(hasher => hasher.Verify(password, user.PasswordHash))
+            .Returns(true);
+
+        var service = new LocalAuthenticationService(userStore.Object, passwordHasher.Object);
+
+        Result<AuthenticatedUser> result = await service.AuthenticateAsync(
+            new LocalAuthenticationRequest(email, password));
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Code.Should().Be("Auth.NoTenantAccess");
     }
 }
