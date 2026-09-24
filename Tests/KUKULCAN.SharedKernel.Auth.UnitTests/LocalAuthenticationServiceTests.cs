@@ -414,9 +414,9 @@ public sealed class LocalAuthenticationServiceTests
         Result<AuthenticatedUser> result = await service.AuthenticateAsync(
             new LocalAuthenticationRequest(email, password));
 
-        result.IsSuccess.Should().BeFalse();
+        result.IsFailure.Should().BeTrue();
         result.Error.Code.Should().Be("Auth.NoTenantAccess");
-        result.Value.Should().BeNull();
+        result.Error.Description.Should().Be("The user does not belong to any tenant.");
     }
 
     [Test]
@@ -436,9 +436,9 @@ public sealed class LocalAuthenticationServiceTests
         Result<AuthenticatedUser> result = await service.AuthenticateAsync(
             new LocalAuthenticationRequest(email, password));
 
-        result.IsSuccess.Should().BeFalse();
+        result.IsFailure.Should().BeTrue();
         result.Error.Code.Should().Be("Auth.InvalidCredentials");
-        result.Value.Should().BeNull();
+        result.Error.Description.Should().Be("The supplied credentials are invalid.");
 
         passwordHasher.Verify(
             hasher => hasher.Verify(It.IsAny<string>(), It.IsAny<string>()),
@@ -471,9 +471,9 @@ public sealed class LocalAuthenticationServiceTests
         Result<AuthenticatedUser> result = await service.AuthenticateAsync(
             new LocalAuthenticationRequest(email, password));
 
-        result.IsSuccess.Should().BeFalse();
+        result.IsFailure.Should().BeTrue();
         result.Error.Code.Should().Be("Auth.InvalidCredentials");
-        result.Value.Should().BeNull();
+        result.Error.Description.Should().Be("The supplied credentials are invalid.");
 
         passwordHasher.Verify(
             hasher => hasher.Verify(password, user.PasswordHash),
