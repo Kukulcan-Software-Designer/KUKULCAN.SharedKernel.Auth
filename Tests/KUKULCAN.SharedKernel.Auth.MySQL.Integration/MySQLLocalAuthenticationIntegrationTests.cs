@@ -361,7 +361,11 @@ public sealed class MySQLLocalAuthenticationIntegrationTests
 
         await context.SaveChangesAsync();
 
-        context.Users.Remove(new AuthUserEntity { UserId = userId });
+        var persistedUser = await context.Users
+            .IgnoreQueryFilters()
+            .SingleAsync(entity => entity.UserId == userId);
+
+        context.Users.Remove(persistedUser);
         await context.SaveChangesAsync();
 
         // Clear the tracked graph so verification is forced to read the database.
