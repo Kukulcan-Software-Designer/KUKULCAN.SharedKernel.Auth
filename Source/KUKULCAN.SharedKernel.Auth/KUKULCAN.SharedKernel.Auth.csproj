@@ -17,6 +17,7 @@
     <PackageReference Include="KUKULCAN.SharedKernel" Version="1.0.0" />
     <PackageReference Include="KUKULCAN.SharedKernel.Database" Version="1.0.2" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.*" />
+    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="10.*" />
   </ItemGroup>
 
 </Project>
