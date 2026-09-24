@@ -29,9 +29,6 @@ public static class AuthDbContextFactory
             ConnectionString = connection.ConnectionString
         });
 
-        var options = new DbContextOptionsBuilder<AuthDbContext>()
-            .UseSqlServer(connection.ConnectionString)
-            .Options;
 
         var context = new AuthDbContext(
             databaseOptions,
