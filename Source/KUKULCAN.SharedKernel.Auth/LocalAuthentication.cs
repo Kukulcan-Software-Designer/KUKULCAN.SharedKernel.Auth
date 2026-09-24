@@ -31,6 +31,9 @@ public interface ILocalUserStore
 /// <summary>Verifies password values against stored password hashes.</summary>
 public interface IPasswordHasher
 {
+    /// <summary>Creates a password hash suitable for persistent storage.</summary>
+    string Hash(string password);
+
     /// <summary>Determines whether a password matches a stored hash.</summary>
     bool Verify(string password, string passwordHash);
 }
