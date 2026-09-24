@@ -12,10 +12,6 @@
       <AssemblyName>KUKULCAN.SharedKernel.Auth.MySQL.Integration</AssemblyName>
   </PropertyGroup>
 
-
-
-
-
   <ItemGroup>
     <ProjectReference Include="../../Source/KUKULCAN.SharedKernel.Auth/KUKULCAN.SharedKernel.Auth.csproj" />
   </ItemGroup>
