@@ -14,4 +14,7 @@ public sealed class AuthUserEntity
 
     /// <summary>Gets or sets the user's tenant memberships.</summary>
     public ICollection<AuthTenantMembershipEntity> TenantMemberships { get; set; } = [];
+
+    /// <summary>Gets or sets the user's federated identities.</summary>
+    public ICollection<AuthFederatedIdentityEntity> FederatedIdentities { get; set; } = [];
 }
