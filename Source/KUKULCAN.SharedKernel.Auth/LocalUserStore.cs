@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+
 namespace KUKULCAN.SharedKernel.Auth;
 
 /// <summary>Persists and retrieves local authentication users.</summary>

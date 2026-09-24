@@ -1,13 +1,10 @@
-
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using FluentAssertions;
-using KUKULCAN.SharedKernel.Auth;
 using NUnit.Framework;
 
-namespace KUKULCAN.SharedKernel.Auth.UnitTests;
+namespace KUKULCAN.SharedKernel.Auth.UnitTests.ValidatorTests;
 
 [TestFixture]
 public sealed class MicrosoftCredentialValidatorTests
