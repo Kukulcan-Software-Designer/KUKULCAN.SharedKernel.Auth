@@ -36,3 +36,27 @@ public sealed class AuthTenantMembershipEntityConfiguration : IEntityTypeConfigu
         builder.HasKey(entity => new { entity.UserId, entity.TenantId });
     }
 }
+
+
+/// <summary>Configures persisted federated identities linked to local authentication users.</summary>
+public sealed class AuthFederatedIdentityEntityConfiguration : IEntityTypeConfiguration<AuthFederatedIdentityEntity>
+{
+    /// <inheritdoc />
+    public void Configure(EntityTypeBuilder<AuthFederatedIdentityEntity> builder)
+    {
+        builder.HasKey(entity => new { entity.Provider, entity.Subject });
+
+        builder.Property(entity => entity.Provider)
+            .IsRequired()
+            .HasMaxLength(100);
+
+        builder.Property(entity => entity.Subject)
+            .IsRequired()
+            .HasMaxLength(450);
+
+        builder.HasOne(entity => entity.User)
+            .WithMany(entity => entity.FederatedIdentities)
+            .HasForeignKey(entity => entity.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+}
