@@ -28,7 +28,7 @@ public sealed class GoogleCredentialValidatorTests
 
         var result = await new GoogleCredentialValidator(ClientId, client).ValidateAsync(token);
 
-        result.IsSuccess.Should().BeTrue();
+        result.IsSuccess.Should().BeTrue($"Error: {result.Error.Code} - {result.Error.Description}");
         result.Value.Provider.Should().Be("Google");
         result.Value.Subject.Should().Be("google-subject");
         result.Value.Email.Should().Be("user@example.com");
@@ -83,10 +83,7 @@ public sealed class GoogleCredentialValidatorTests
     {
         return new HttpClient(new StubHandler(request =>
         {
-            if (request.RequestUri?.AbsoluteUri.Contains("openid-configuration", StringComparison.OrdinalIgnoreCase) == true)
-                return Json(new { issuer, jwks_uri = "https://www.googleapis.com/oauth2/v3/certs" });
-
-            return Json(new { keys = new[] { Jwk(key, "google-key") } });
+            return request.RequestUri?.AbsoluteUri.Contains("openid-configuration", StringComparison.OrdinalIgnoreCase) == true ? Json(new { issuer, jwks_uri = "https://www.googleapis.com/oauth2/v3/certs" }) : Json(new { keys = new[] { Jwk(key, "google-key") } });
         }));
     }
 
