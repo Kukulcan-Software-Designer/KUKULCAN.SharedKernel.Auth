@@ -462,4 +462,45 @@ public sealed class SqlServerLocalAuthenticationIntegrationTests
             Is.EquivalentTo(new[] { activeTenantId, otherTenantId }));
     }
 
+
+    [Test]
+    public async Task AuthenticateAsync_WhenUserHasOnlyMembershipsOutsideActiveTenant_ReturnsNoTenantAccess()
+    {
+        var activeTenantId = Guid.NewGuid();
+        var otherTenantId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        const string email = "outside-active-tenant@example.com";
+        const string password = "CorrectPassword!";
+        var passwordHasher = new PasswordHasher();
+
+        await using var context = await AuthDbContextFactory.CreateAsync(
+            SqlServerAuthenticationDatabase.ConnectionString,
+            activeTenantId);
+
+        context.Users.Add(new AuthUserEntity
+        {
+            UserId = userId,
+            Email = email,
+            PasswordHash = passwordHasher.Hash(password)
+        });
+
+        context.TenantMemberships.Add(new AuthTenantMembershipEntity
+        {
+            UserId = userId,
+            TenantId = otherTenantId
+        });
+
+        await context.SaveChangesAsync();
+
+        var service = new LocalAuthenticationService(
+            new LocalUserStore(context),
+            passwordHasher);
+
+        var result = await service.AuthenticateAsync(
+            new LocalAuthenticationRequest(email, password));
+
+        Assert.That(result.IsFailure, Is.True);
+        Assert.That(result.Error.Code, Is.EqualTo("Auth.NoTenantAccess"));
+    }
+
 }
