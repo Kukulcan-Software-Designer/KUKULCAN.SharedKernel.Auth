@@ -79,7 +79,7 @@ public sealed class LocalAuthenticationService
             return Result<AuthenticatedUser>.Failure(InvalidCredentials);
         }
 
-        if (!user.HasActiveTenantAccess)
+        if (user.Tenants.Count == 0 || !user.HasActiveTenantAccess)
         {
             return Result<AuthenticatedUser>.Failure(NoTenantAccess);
         }
