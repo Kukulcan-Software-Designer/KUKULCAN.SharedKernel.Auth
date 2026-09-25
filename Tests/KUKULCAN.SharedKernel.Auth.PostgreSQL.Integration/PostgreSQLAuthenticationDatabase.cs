@@ -1,3 +1,4 @@
+using NUnit.Framework;
 using Testcontainers.PostgreSql;
 
 namespace KUKULCAN.SharedKernel.Auth.PostgreSQL.Integration;
