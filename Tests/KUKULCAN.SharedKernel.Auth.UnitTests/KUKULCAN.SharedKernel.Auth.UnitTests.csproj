@@ -17,6 +17,8 @@
 
   <ItemGroup>
     <Compile Remove="Api/AuthenticationApiTests.cs" />
+    <Compile Remove="FederatedAuthenticationServiceTests.cs" />
+    <Compile Remove="FederatedAuthenticationProvidersTests.cs" />
     <Compile Remove="ValidatorTests/GoogleCredentialValidatorTests.cs" />
     <Compile Remove="ValidatorTests/MicrosoftCredentialValidatorTests.cs" />
     <Compile Remove="ValidatorTests/AppleCredentialValidatorTests.cs" />
