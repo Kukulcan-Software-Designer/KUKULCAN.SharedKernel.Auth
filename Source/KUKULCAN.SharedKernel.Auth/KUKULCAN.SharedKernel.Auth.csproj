@@ -18,6 +18,7 @@
     <PackageReference Include="KUKULCAN.SharedKernel.Database" Version="1.0.2" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.*" />
     <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="10.*" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.23.0" />
   </ItemGroup>
 
 </Project>

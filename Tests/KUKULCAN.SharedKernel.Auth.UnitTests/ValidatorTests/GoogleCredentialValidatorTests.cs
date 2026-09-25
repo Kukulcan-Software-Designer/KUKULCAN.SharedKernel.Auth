@@ -2,7 +2,9 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using FluentAssertions;
 using NUnit.Framework;
+using KUKULCAN.SharedKernel.Auth.Authentication.Federated;
 
 namespace KUKULCAN.SharedKernel.Auth.UnitTests.ValidatorTests;
 
