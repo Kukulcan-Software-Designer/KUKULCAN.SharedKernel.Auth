@@ -221,7 +221,9 @@ public sealed class GoogleCredentialValidator : IFederatedCredentialValidator
             .Replace('-', '+')
             .Replace('_', '/');
 
-        padded += padded.Length % 4 switch
+        var remainder = padded.Length % 4;
+
+        padded += remainder switch
         {
             0 => string.Empty,
             2 => "==",
