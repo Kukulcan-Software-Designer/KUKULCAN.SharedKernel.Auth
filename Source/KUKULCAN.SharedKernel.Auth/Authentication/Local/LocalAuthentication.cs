@@ -13,7 +13,8 @@ public sealed record LocalUser(
     Guid UserId,
     string Email,
     string PasswordHash,
-    IReadOnlyCollection<TenantMembership> Tenants);
+    IReadOnlyCollection<TenantMembership> Tenants,
+    bool HasActiveTenantAccess = true);
 
 /// <summary>Represents an authenticated user and all tenants to which the user belongs.</summary>
 public sealed record AuthenticatedUser(
@@ -78,7 +79,7 @@ public sealed class LocalAuthenticationService
             return Result<AuthenticatedUser>.Failure(InvalidCredentials);
         }
 
-        if (user.Tenants.Count == 0)
+        if (!user.HasActiveTenantAccess)
         {
             return Result<AuthenticatedUser>.Failure(NoTenantAccess);
         }
