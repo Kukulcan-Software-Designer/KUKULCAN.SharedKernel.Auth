@@ -11,7 +11,7 @@ permissions:
   contents: read
 jobs:
   coverage:
-    name: Auth code coverage
+    name: Measure and publish Auth code coverage
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -49,9 +49,9 @@ jobs:
             </DataCollectionRunSettings>
           </RunSettings>
           EOF
-      - name: Restore solution
+      - name: Prepare solution for coverage
         run: dotnet restore KUKULCAN.SharedKernel.Auth.slnx
-      - name: Build solution
+      - name: Build solution for coverage
         run: dotnet build KUKULCAN.SharedKernel.Auth.slnx --no-restore --configuration Release
       - name: Run unit tests with coverage
         run: >-
