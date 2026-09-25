@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using KUKULCAN.SharedKernel.Auth.Authentication.Local;
 using KUKULCAN.SharedKernel.Auth.Entities;
 using NUnit.Framework;
