@@ -172,19 +172,22 @@ public sealed class SqlServerLocalAuthenticationIntegrationTests
 
         var userId = Guid.NewGuid();
 
-        context.Users.AddRange(
-            new AuthUserEntity
-            {
-                UserId = userId,
-                Email = "first@example.com",
-                PasswordHash = "first-hash"
-            },
-            new AuthUserEntity
-            {
-                UserId = userId,
-                Email = "second@example.com",
-                PasswordHash = "second-hash"
-            });
+        context.Users.Add(new AuthUserEntity
+        {
+            UserId = userId,
+            Email = "first@example.com",
+            PasswordHash = "first-hash"
+        });
+
+        await context.SaveChangesAsync();
+        context.ChangeTracker.Clear();
+
+        context.Users.Add(new AuthUserEntity
+        {
+            UserId = userId,
+            Email = "second@example.com",
+            PasswordHash = "second-hash"
+        });
 
         Assert.ThrowsAsync<DbUpdateException>(
             async () => await context.SaveChangesAsync());
@@ -255,17 +258,20 @@ public sealed class SqlServerLocalAuthenticationIntegrationTests
             PasswordHash = "stored-password-hash"
         });
 
-        context.TenantMemberships.AddRange(
-            new AuthTenantMembershipEntity
-            {
-                UserId = userId,
-                TenantId = tenantId
-            },
-            new AuthTenantMembershipEntity
-            {
-                UserId = userId,
-                TenantId = tenantId
-            });
+        context.TenantMemberships.Add(new AuthTenantMembershipEntity
+        {
+            UserId = userId,
+            TenantId = tenantId
+        });
+
+        await context.SaveChangesAsync();
+        context.ChangeTracker.Clear();
+
+        context.TenantMemberships.Add(new AuthTenantMembershipEntity
+        {
+            UserId = userId,
+            TenantId = tenantId
+        });
 
         Assert.ThrowsAsync<DbUpdateException>(
             async () => await context.SaveChangesAsync());
