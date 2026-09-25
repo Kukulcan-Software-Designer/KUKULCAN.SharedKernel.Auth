@@ -201,19 +201,19 @@ public sealed class GoogleCredentialValidator : IFederatedCredentialValidator
     }
 
     private sealed record OpenIdConfiguration(
-        string Issuer,
+        [property: JsonPropertyName("issuer")] string Issuer,
         [property: JsonPropertyName("jwks_uri")] string JwksUri);
 
     private sealed record JsonWebKeySetResponse(
-        List<JsonWebKey> Keys);
+        [property: JsonPropertyName("keys")] List<JsonWebKey> Keys);
 
     private sealed record JsonWebKey(
-        string Kty,
-        string Use,
-        string Alg,
-        string Kid,
-        string N,
-        string E);
+        [property: JsonPropertyName("kty")] string Kty,
+        [property: JsonPropertyName("use")] string Use,
+        [property: JsonPropertyName("alg")] string Alg,
+        [property: JsonPropertyName("kid")] string Kid,
+        [property: JsonPropertyName("n")] string N,
+        [property: JsonPropertyName("e")] string E);
 
     private static byte[] Base64UrlDecode(string value)
     {
