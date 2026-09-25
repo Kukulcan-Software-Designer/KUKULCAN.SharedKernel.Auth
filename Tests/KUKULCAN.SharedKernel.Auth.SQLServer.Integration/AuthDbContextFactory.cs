@@ -1,4 +1,5 @@
 using KUKULCAN.SharedKernel.Abstractions;
+using KUKULCAN.SharedKernel.Auth.Persistence;
 using KUKULCAN.SharedKernel.Database.Abstractions;
 using KUKULCAN.SharedKernel.Database.Configuration;
 using KUKULCAN.SharedKernel.DomainEvents.Abstractions;

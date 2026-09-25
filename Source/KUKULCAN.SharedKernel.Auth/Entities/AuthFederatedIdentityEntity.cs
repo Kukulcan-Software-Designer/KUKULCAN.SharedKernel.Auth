@@ -1,4 +1,4 @@
-namespace KUKULCAN.SharedKernel.Auth;
+namespace KUKULCAN.SharedKernel.Auth.Entities;
 
 /// <summary>Represents a persisted external identity linked to a local authentication user.</summary>
 public sealed class AuthFederatedIdentityEntity

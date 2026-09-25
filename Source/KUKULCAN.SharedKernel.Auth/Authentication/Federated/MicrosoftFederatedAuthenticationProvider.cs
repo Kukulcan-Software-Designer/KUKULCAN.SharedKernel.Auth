@@ -1,9 +1,9 @@
 using KUKULCAN.SharedKernel.Results;
 
-namespace KUKULCAN.SharedKernel.Auth;
+namespace KUKULCAN.SharedKernel.Auth.Authentication.Federated;
 
-/// <summary>Authenticates users through Google federated credentials.</summary>
-public sealed class GoogleFederatedAuthenticationProvider : IFederatedAuthenticationProvider
+/// <summary>Authenticates users through Microsoft federated credentials.</summary>
+public sealed class MicrosoftFederatedAuthenticationProvider : IFederatedAuthenticationProvider
 {
     private static readonly Error FederatedProviderMismatch = new(
         "Auth.FederatedProviderMismatch",
@@ -11,15 +11,15 @@ public sealed class GoogleFederatedAuthenticationProvider : IFederatedAuthentica
 
     private readonly IFederatedCredentialValidator _validator;
 
-    /// <summary>Initializes the Google federated authentication provider.</summary>
-    public GoogleFederatedAuthenticationProvider(IFederatedCredentialValidator validator)
+    /// <summary>Initializes the Microsoft federated authentication provider.</summary>
+    public MicrosoftFederatedAuthenticationProvider(IFederatedCredentialValidator validator)
     {
         ArgumentNullException.ThrowIfNull(validator);
         _validator = validator;
     }
 
     /// <inheritdoc />
-    public string Provider => "Google";
+    public string Provider => "Microsoft";
 
     /// <inheritdoc />
     public Task<Result<FederatedIdentity>> AuthenticateAsync(

@@ -1,3 +1,5 @@
+using KUKULCAN.SharedKernel.Auth.Authentication.Local;
+using KUKULCAN.SharedKernel.Auth.Entities;
 using NUnit.Framework;
 
 namespace KUKULCAN.SharedKernel.Auth.PostgreSQL.Integration;
@@ -185,6 +187,29 @@ public sealed class PostgreSQLLocalAuthenticationIntegrationTests
 
         Assert.ThrowsAsync<DbUpdateException>(
             async () => await context.SaveChangesAsync());
+    }
+
+    [Test]
+    public async Task UserEmail_IsCanonicalizedWhenPersisted()
+    {
+        await using var context = await AuthDbContextFactory.CreateAsync(
+            PostgreSQLAuthenticationDatabase.ConnectionString,
+            Guid.NewGuid());
+
+        context.Users.Add(new AuthUserEntity
+        {
+            UserId = Guid.NewGuid(),
+            Email = "  USER@Example.COM  ",
+            PasswordHash = "stored-password-hash"
+        });
+
+        await context.SaveChangesAsync();
+        context.ChangeTracker.Clear();
+
+        var persistedUser = await context.Users
+            .SingleAsync(entity => entity.Email == "user@example.com");
+
+        Assert.That(persistedUser.Email, Is.EqualTo("user@example.com"));
     }
 
     [Test]

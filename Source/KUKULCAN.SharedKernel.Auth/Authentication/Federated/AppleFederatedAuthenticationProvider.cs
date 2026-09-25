@@ -1,9 +1,9 @@
 using KUKULCAN.SharedKernel.Results;
 
-namespace KUKULCAN.SharedKernel.Auth;
+namespace KUKULCAN.SharedKernel.Auth.Authentication.Federated;
 
-/// <summary>Authenticates users through Microsoft federated credentials.</summary>
-public sealed class MicrosoftFederatedAuthenticationProvider : IFederatedAuthenticationProvider
+/// <summary>Authenticates users through Apple federated credentials.</summary>
+public sealed class AppleFederatedAuthenticationProvider : IFederatedAuthenticationProvider
 {
     private static readonly Error FederatedProviderMismatch = new(
         "Auth.FederatedProviderMismatch",
@@ -11,15 +11,15 @@ public sealed class MicrosoftFederatedAuthenticationProvider : IFederatedAuthent
 
     private readonly IFederatedCredentialValidator _validator;
 
-    /// <summary>Initializes the Microsoft federated authentication provider.</summary>
-    public MicrosoftFederatedAuthenticationProvider(IFederatedCredentialValidator validator)
+    /// <summary>Initializes the Apple federated authentication provider.</summary>
+    public AppleFederatedAuthenticationProvider(IFederatedCredentialValidator validator)
     {
         ArgumentNullException.ThrowIfNull(validator);
         _validator = validator;
     }
 
     /// <inheritdoc />
-    public string Provider => "Microsoft";
+    public string Provider => "Apple";
 
     /// <inheritdoc />
     public Task<Result<FederatedIdentity>> AuthenticateAsync(

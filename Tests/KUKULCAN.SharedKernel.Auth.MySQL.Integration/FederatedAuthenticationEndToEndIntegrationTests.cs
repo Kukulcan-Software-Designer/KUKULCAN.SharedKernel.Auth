@@ -3,6 +3,9 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using KUKULCAN.SharedKernel.Auth;
+using KUKULCAN.SharedKernel.Auth.Authentication.Federated;
+using KUKULCAN.SharedKernel.Auth.Authentication.Local;
+using KUKULCAN.SharedKernel.Auth.Entities;
 using KUKULCAN.SharedKernel.Results;
 using NUnit.Framework;
 

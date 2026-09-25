@@ -1,4 +1,5 @@
 using FluentAssertions;
+using KUKULCAN.SharedKernel.Auth.Authentication.Local;
 using NUnit.Framework;
 
 namespace KUKULCAN.SharedKernel.Auth.UnitTests;

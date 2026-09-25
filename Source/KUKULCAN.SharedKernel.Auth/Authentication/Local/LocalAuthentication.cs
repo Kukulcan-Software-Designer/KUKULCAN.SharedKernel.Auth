@@ -1,6 +1,6 @@
 using KUKULCAN.SharedKernel.Results;
 
-namespace KUKULCAN.SharedKernel.Auth;
+namespace KUKULCAN.SharedKernel.Auth.Authentication.Local;
 
 /// <summary>Represents a local authentication request.</summary>
 public sealed record LocalAuthenticationRequest(string Email, string Password);
