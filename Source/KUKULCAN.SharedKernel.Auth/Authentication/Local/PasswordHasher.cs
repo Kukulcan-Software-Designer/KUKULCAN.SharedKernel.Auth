@@ -1,4 +1,4 @@
-namespace KUKULCAN.SharedKernel.Auth;
+namespace KUKULCAN.SharedKernel.Auth.Authentication.Local;
 
 /// <summary>Provides password hashing and verification using ASP.NET Core Identity's password hasher.</summary>
 public sealed class PasswordHasher : IPasswordHasher

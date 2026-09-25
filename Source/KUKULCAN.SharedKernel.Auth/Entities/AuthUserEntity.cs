@@ -1,4 +1,4 @@
-namespace KUKULCAN.SharedKernel.Auth;
+namespace KUKULCAN.SharedKernel.Auth.Entities;
 
 /// <summary>Represents the persisted local authentication identity.</summary>
 public sealed class AuthUserEntity

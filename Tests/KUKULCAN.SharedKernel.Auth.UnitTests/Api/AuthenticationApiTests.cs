@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
 using KUKULCAN.SharedKernel.Auth;
+using KUKULCAN.SharedKernel.Auth.Authentication.Local;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;

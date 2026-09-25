@@ -1,6 +1,7 @@
+using KUKULCAN.SharedKernel.Auth.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace KUKULCAN.SharedKernel.Auth;
+namespace KUKULCAN.SharedKernel.Auth.Authentication.Local;
 
 /// <summary>Persists and retrieves local authentication users.</summary>
 public sealed class LocalUserStore : ILocalUserStore

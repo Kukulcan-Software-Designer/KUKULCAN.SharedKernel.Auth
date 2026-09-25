@@ -1,6 +1,8 @@
+using KUKULCAN.SharedKernel.Auth.Authentication.Local;
+using KUKULCAN.SharedKernel.Auth.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace KUKULCAN.SharedKernel.Auth;
+namespace KUKULCAN.SharedKernel.Auth.Authentication.Federated;
 
 /// <summary>Persists and retrieves local users linked to federated identities.</summary>
 public sealed class FederatedUserStore : IFederatedUserStore

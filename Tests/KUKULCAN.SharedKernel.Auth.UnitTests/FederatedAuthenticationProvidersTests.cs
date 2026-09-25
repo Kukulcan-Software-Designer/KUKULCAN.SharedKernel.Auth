@@ -1,4 +1,5 @@
 using FluentAssertions;
+using KUKULCAN.SharedKernel.Auth.Authentication.Federated;
 using KUKULCAN.SharedKernel.Results;
 using Moq;
 using NUnit.Framework;

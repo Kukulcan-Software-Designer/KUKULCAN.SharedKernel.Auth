@@ -1,7 +1,8 @@
+using KUKULCAN.SharedKernel.Auth.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace KUKULCAN.SharedKernel.Auth;
+namespace KUKULCAN.SharedKernel.Auth.Persistence;
 
 /// <summary>Configures the persisted local authentication user.</summary>
 public sealed class AuthUserEntityConfiguration : IEntityTypeConfiguration<AuthUserEntity>

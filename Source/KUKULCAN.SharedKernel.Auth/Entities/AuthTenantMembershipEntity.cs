@@ -1,4 +1,4 @@
-namespace KUKULCAN.SharedKernel.Auth;
+namespace KUKULCAN.SharedKernel.Auth.Entities;
 
 /// <summary>Represents a persisted membership of a local user in a tenant.</summary>
 public sealed class AuthTenantMembershipEntity

@@ -1,6 +1,7 @@
+using KUKULCAN.SharedKernel.Auth.Authentication.Local;
 using KUKULCAN.SharedKernel.Results;
 
-namespace KUKULCAN.SharedKernel.Auth;
+namespace KUKULCAN.SharedKernel.Auth.Authentication.Federated;
 
 /// <summary>Represents a federated authentication request.</summary>
 public sealed record FederatedAuthenticationRequest(string Provider, string Credential);

@@ -1,3 +1,5 @@
+using KUKULCAN.SharedKernel.Auth.Authentication.Local;
+using KUKULCAN.SharedKernel.Auth.Entities;
 using NUnit.Framework;
 
 namespace KUKULCAN.SharedKernel.Auth.PostgreSQL.Integration;

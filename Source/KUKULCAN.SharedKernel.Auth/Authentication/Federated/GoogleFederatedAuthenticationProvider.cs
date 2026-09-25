@@ -1,6 +1,6 @@
 using KUKULCAN.SharedKernel.Results;
 
-namespace KUKULCAN.SharedKernel.Auth;
+namespace KUKULCAN.SharedKernel.Auth.Authentication.Federated;
 
 /// <summary>Authenticates users through Google federated credentials.</summary>
 public sealed class GoogleFederatedAuthenticationProvider : IFederatedAuthenticationProvider
