@@ -12,7 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../Source/KUKULCAN.SharedKernel.Auth/KUKULCAN.SharedKernel.Auth.csproj />
+    <ProjectReference Include="../../Source/KUKULCAN.SharedKernel.Auth/KUKULCAN.SharedKernel.Auth.csproj" />
     <Using Include="KUKULCAN.SharedKernel.Auth.Authentication.Federated" />
   </ItemGroup>
 
