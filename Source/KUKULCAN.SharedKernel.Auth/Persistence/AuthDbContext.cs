@@ -32,4 +32,37 @@ public sealed class AuthDbContext : KukulcanDbContextBase
 
     /// <summary>Gets the persisted federated identities.</summary>
     public DbSet<AuthFederatedIdentityEntity> FederatedIdentities => Set<AuthFederatedIdentityEntity>();
+
+    /// <inheritdoc />
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        CanonicalizeUserEmails();
+        return base.SaveChanges(acceptAllChangesOnSuccess);
+    }
+
+    /// <inheritdoc />
+    public override int SaveChanges()
+        => SaveChanges(acceptAllChangesOnSuccess: true);
+
+    /// <inheritdoc />
+    public override Task<int> SaveChangesAsync(
+        bool acceptAllChangesOnSuccess,
+        CancellationToken cancellationToken = default)
+    {
+        CanonicalizeUserEmails();
+        return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        => SaveChangesAsync(acceptAllChangesOnSuccess: true, cancellationToken);
+
+    private void CanonicalizeUserEmails()
+    {
+        foreach (var entry in ChangeTracker.Entries<AuthUserEntity>()
+                     .Where(entry => entry.State is EntityState.Added or EntityState.Modified))
+        {
+            entry.Entity.Email = entry.Entity.Email.Trim().ToLowerInvariant();
+        }
+    }
 }

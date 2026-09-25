@@ -1,3 +1,4 @@
+using NUnit.Framework;
 using Testcontainers.MySql;
 
 namespace KUKULCAN.SharedKernel.Auth.MySQL.Integration;
