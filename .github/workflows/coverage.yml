@@ -35,7 +35,10 @@ jobs:
                   <Configuration>
                     <Format>cobertura</Format>
                     <Include>[KUKULCAN.SharedKernel.Auth]*</Include>
-                    <Exclude>[KUKULCAN.SharedKernel.Auth.*Tests]*</Exclude>
+                    <Exclude>[KUKULCAN.SharedKernel.Auth.UnitTests]*</Exclude>
+                    <Exclude>[KUKULCAN.SharedKernel.Auth.SQLServer.Integration]*</Exclude>
+                    <Exclude>[KUKULCAN.SharedKernel.Auth.PostgreSQL.Integration]*</Exclude>
+                    <Exclude>[KUKULCAN.SharedKernel.Auth.MySQL.Integration]*</Exclude>
                     <ExcludeByAttribute>CompilerGeneratedAttribute</ExcludeByAttribute>
                     <SingleHit>false</SingleHit>
                     <UseSourceLink>true</UseSourceLink>
