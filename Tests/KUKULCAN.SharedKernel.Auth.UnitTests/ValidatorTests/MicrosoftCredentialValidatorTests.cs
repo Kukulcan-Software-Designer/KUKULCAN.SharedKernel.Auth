@@ -181,7 +181,12 @@ public sealed class MicrosoftCredentialValidatorTests
             if (request.RequestUri?.AbsoluteUri.Contains("openid-configuration", StringComparison.OrdinalIgnoreCase) == true)
             {
                 if (configurationIsExplicit)
+                {
+                    if (configuration is null)
+                        return JsonNull();
+
                     return Json(configuration);
+                }
 
                 return Json(new
                 {
@@ -215,6 +220,9 @@ public sealed class MicrosoftCredentialValidatorTests
 
     private static HttpResponseMessage Json(object value) =>
         new(HttpStatusCode.OK) { Content = new StringContent(JsonSerializer.Serialize(value), Encoding.UTF8, "application/json") };
+
+    private static HttpResponseMessage JsonNull() =>
+        new(HttpStatusCode.OK) { Content = new StringContent("null", Encoding.UTF8, "application/json") };
 
     private sealed class StubHandler(Func<HttpRequestMessage, HttpResponseMessage> handler) : HttpMessageHandler
     {
