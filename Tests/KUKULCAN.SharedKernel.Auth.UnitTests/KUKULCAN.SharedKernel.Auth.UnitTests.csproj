@@ -13,28 +13,29 @@
 
   <ItemGroup>
     <ProjectReference Include="../../Source/KUKULCAN.SharedKernel.Auth/KUKULCAN.SharedKernel.Auth.csproj" />
+    <Using Include="KUKULCAN.SharedKernel.Auth.Authentication.Federated" />
+    <Using Include="FluentAssertions" />
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="Api/AuthenticationApiTests.cs" />
     <Compile Remove="FederatedAuthenticationServiceTests.cs" />
     <Compile Remove="FederatedAuthenticationProvidersTests.cs" />
-    <Compile Remove="ValidatorTests/MicrosoftCredentialValidatorTests.cs" />
+    <Compile Remove="Api/AuthenticationApiTests.cs" />
     <Compile Remove="ValidatorTests/AppleCredentialValidatorTests.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.*" />
-    <PackageReference Include="NUnit" Version="4.*" />
-    <PackageReference Include="NUnit3TestAdapter" Version="5.*" />
-    <PackageReference Include="NUnit.Analyzers" Version="4.*" />
-    <PackageReference Include="KUKULCAN.SharedKernel" Version="1.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.*" />
-    <PackageReference Include="Moq" Version="4.*" />
-    <PackageReference Include="FluentAssertions" Version="8.*" />
     <PackageReference Include="AutoFixture" Version="4.*" />
     <PackageReference Include="AutoFixture.AutoMoq" Version="4.*" />
     <PackageReference Include="coverlet.collector" Version="6.*" />
+    <PackageReference Include="FluentAssertions" Version="8.*" />
+    <PackageReference Include="KUKULCAN.SharedKernel" Version="1.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.*" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.*" />
+    <PackageReference Include="Moq" Version="4.*" />
+    <PackageReference Include="NUnit" Version="4.*" />
+    <PackageReference Include="NUnit3TestAdapter" Version="5.*" />
+    <PackageReference Include="NUnit.Analyzers" Version="4.*" />
   </ItemGroup>
 
 </Project>
