@@ -99,13 +99,15 @@ public sealed class MicrosoftCredentialValidatorTests
         using var key = RSA.Create(2048);
         using var client = CreateClient(
             key,
-            configuration: scenario switch
-            {
-                "missing-configuration" => null,
-                "missing-issuer" => new { issuer = "", jwks_uri = "https://login.microsoftonline.com/common/discovery/v2.0/keys" },
-                "missing-jwks-uri" => new { issuer = "https://login.microsoftonline.com/{tenantid}/v2.0", jwks_uri = "" },
-                _ => throw new ArgumentOutOfRangeException(nameof(scenario), scenario, null)
-            });
+            configuration: scenario == "missing-configuration"
+                ? null
+                : scenario switch
+                {
+                    "missing-issuer" => new { issuer = "", jwks_uri = "https://login.microsoftonline.com/common/discovery/v2.0/keys" },
+                    "missing-jwks-uri" => new { issuer = "https://login.microsoftonline.com/{tenantid}/v2.0", jwks_uri = "" },
+                    _ => throw new ArgumentOutOfRangeException(nameof(scenario), scenario, null)
+                },
+            configurationIsExplicit: true);
 
         var token = CreateToken(key, "microsoft-key", Issuer, ClientId, new Dictionary<string, object>
         {
@@ -172,15 +174,21 @@ public sealed class MicrosoftCredentialValidatorTests
     private static HttpClient CreateClient(
         RSA key,
         object? configuration = null,
-        object? jwks = null) =>
+        object? jwks = null,
+        bool configurationIsExplicit = false) =>
         new(new StubHandler(request =>
         {
             if (request.RequestUri?.AbsoluteUri.Contains("openid-configuration", StringComparison.OrdinalIgnoreCase) == true)
-                return Json(configuration ?? new
+            {
+                if (configurationIsExplicit)
+                    return Json(configuration);
+
+                return Json(new
                 {
                     issuer = "https://login.microsoftonline.com/{tenantid}/v2.0",
                     jwks_uri = "https://login.microsoftonline.com/common/discovery/v2.0/keys"
                 });
+            }
 
             return Json(jwks ?? new { keys = new[] { Jwk(key, "microsoft-key") } });
         }));
