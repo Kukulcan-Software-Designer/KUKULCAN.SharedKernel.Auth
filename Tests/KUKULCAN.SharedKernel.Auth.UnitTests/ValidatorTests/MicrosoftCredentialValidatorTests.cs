@@ -72,6 +72,56 @@ public sealed class MicrosoftCredentialValidatorTests
     }
 
     [Test]
+    public async Task ValidateAsync_WithMalformedTid_RejectsToken()
+    {
+        using var key = RSA.Create(2048);
+        using var client = CreateClient(key);
+        var token = CreateToken(key, "microsoft-key", Issuer, ClientId, new Dictionary<string, object>
+        {
+            ["tid"] = "not-a-guid",
+            ["oid"] = ObjectId,
+            ["exp"] = DateTimeOffset.UtcNow.AddMinutes(5).ToUnixTimeSeconds()
+        });
+
+        var result = await new MicrosoftCredentialValidator(ClientId, client).ValidateAsync(token);
+
+        result.IsFailure.Should().BeTrue();
+    }
+
+    [Test]
+    public async Task ValidateAsync_WithRsaKeyUsingUnsupportedAlgorithm_RejectsToken()
+    {
+        using var key = RSA.Create(2048);
+        var parameters = key.ExportParameters(false);
+        using var client = CreateClient(key, jwks: new
+        {
+            keys = new[]
+            {
+                new
+                {
+                    kty = "RSA",
+                    use = "sig",
+                    alg = "ES256",
+                    kid = "unsupported-algorithm",
+                    n = B64(parameters.Modulus!),
+                    e = B64(parameters.Exponent!)
+                }
+            }
+        });
+
+        var token = CreateToken(key, "unsupported-algorithm", Issuer, ClientId, new Dictionary<string, object>
+        {
+            ["tid"] = TenantId,
+            ["oid"] = ObjectId,
+            ["exp"] = DateTimeOffset.UtcNow.AddMinutes(5).ToUnixTimeSeconds()
+        });
+
+        var result = await new MicrosoftCredentialValidator(ClientId, client).ValidateAsync(token);
+
+        result.IsFailure.Should().BeTrue();
+    }
+
+    [Test]
     public async Task ValidateAsync_WithUntrustedSignature_RejectsToken()
     {
         using var signingKey = RSA.Create(2048);
