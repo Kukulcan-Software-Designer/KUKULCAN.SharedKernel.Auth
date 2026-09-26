@@ -91,13 +91,98 @@ public sealed class MicrosoftCredentialValidatorTests
         result.IsFailure.Should().BeTrue();
     }
 
-    private static HttpClient CreateClient(RSA key) =>
+    [TestCase("missing-configuration")]
+    [TestCase("missing-issuer")]
+    [TestCase("missing-jwks-uri")]
+    public async Task ValidateAsync_WithInvalidOpenIdConfiguration_RejectsToken(string scenario)
+    {
+        using var key = RSA.Create(2048);
+        using var client = CreateClient(
+            key,
+            configuration: scenario switch
+            {
+                "missing-configuration" => null,
+                "missing-issuer" => new { issuer = "", jwks_uri = "https://login.microsoftonline.com/common/discovery/v2.0/keys" },
+                "missing-jwks-uri" => new { issuer = "https://login.microsoftonline.com/{tenantid}/v2.0", jwks_uri = "" },
+                _ => throw new ArgumentOutOfRangeException(nameof(scenario), scenario, null)
+            });
+
+        var token = CreateToken(key, "microsoft-key", Issuer, ClientId, new Dictionary<string, object>
+        {
+            ["tid"] = TenantId,
+            ["oid"] = ObjectId,
+            ["exp"] = DateTimeOffset.UtcNow.AddMinutes(5).ToUnixTimeSeconds()
+        });
+
+        var result = await new MicrosoftCredentialValidator(ClientId, client).ValidateAsync(token);
+
+        result.IsFailure.Should().BeTrue();
+    }
+
+    [Test]
+    public async Task ValidateAsync_WithEmptyJwks_RejectsToken()
+    {
+        using var key = RSA.Create(2048);
+        using var client = CreateClient(key, jwks: new { keys = Array.Empty<object>() });
+
+        var token = CreateToken(key, "microsoft-key", Issuer, ClientId, new Dictionary<string, object>
+        {
+            ["tid"] = TenantId,
+            ["oid"] = ObjectId,
+            ["exp"] = DateTimeOffset.UtcNow.AddMinutes(5).ToUnixTimeSeconds()
+        });
+
+        var result = await new MicrosoftCredentialValidator(ClientId, client).ValidateAsync(token);
+
+        result.IsFailure.Should().BeTrue();
+    }
+
+    [Test]
+    public async Task ValidateAsync_WithNoUsableJwksKeys_RejectsToken()
+    {
+        using var key = RSA.Create(2048);
+        using var client = CreateClient(key, jwks: new
+        {
+            keys = new[]
+            {
+                new
+                {
+                    kty = "EC",
+                    use = "sig",
+                    alg = "ES256",
+                    kid = "unsupported-key",
+                    n = "",
+                    e = ""
+                }
+            }
+        });
+
+        var token = CreateToken(key, "microsoft-key", Issuer, ClientId, new Dictionary<string, object>
+        {
+            ["tid"] = TenantId,
+            ["oid"] = ObjectId,
+            ["exp"] = DateTimeOffset.UtcNow.AddMinutes(5).ToUnixTimeSeconds()
+        });
+
+        var result = await new MicrosoftCredentialValidator(ClientId, client).ValidateAsync(token);
+
+        result.IsFailure.Should().BeTrue();
+    }
+
+    private static HttpClient CreateClient(
+        RSA key,
+        object? configuration = null,
+        object? jwks = null) =>
         new(new StubHandler(request =>
         {
             if (request.RequestUri?.AbsoluteUri.Contains("openid-configuration", StringComparison.OrdinalIgnoreCase) == true)
-                return Json(new { issuer = "https://login.microsoftonline.com/{tenantid}/v2.0", jwks_uri = "https://login.microsoftonline.com/common/discovery/v2.0/keys" });
+                return Json(configuration ?? new
+                {
+                    issuer = "https://login.microsoftonline.com/{tenantid}/v2.0",
+                    jwks_uri = "https://login.microsoftonline.com/common/discovery/v2.0/keys"
+                });
 
-            return Json(new { keys = new[] { Jwk(key, "microsoft-key") } });
+            return Json(jwks ?? new { keys = new[] { Jwk(key, "microsoft-key") } });
         }));
 
     private static object Jwk(RSA key, string kid)
