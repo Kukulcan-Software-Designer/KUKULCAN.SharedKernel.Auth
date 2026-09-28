@@ -21,7 +21,6 @@
     <Compile Remove="FederatedAuthenticationServiceTests.cs" />
     <Compile Remove="FederatedAuthenticationProvidersTests.cs" />
     <Compile Remove="Api/AuthenticationApiTests.cs" />
-    <Compile Remove="ValidatorTests/AppleCredentialValidatorTests.cs" />
   </ItemGroup>
 
   <ItemGroup>
