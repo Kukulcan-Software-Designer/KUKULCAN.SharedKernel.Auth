@@ -55,6 +55,10 @@ public sealed class FederatedAuthenticationService
         "Auth.FederatedProviderMismatch",
         "The federated identity provider does not match the requested provider.");
 
+    private static readonly Error NoTenantAccess = new(
+        "Auth.NoTenantAccess",
+        "The user does not belong to the active tenant.");
+
     private readonly IReadOnlyCollection<IFederatedAuthenticationProvider> _providers;
     private readonly IFederatedUserStore _userStore;
 
@@ -112,6 +116,11 @@ public sealed class FederatedAuthenticationService
         if (user is null)
         {
             return Result<AuthenticatedUser>.Failure(FederatedIdentityNotLinked);
+        }
+
+        if (user.Tenants.Count == 0 || !user.HasActiveTenantAccess)
+        {
+            return Result<AuthenticatedUser>.Failure(NoTenantAccess);
         }
 
         return Result<AuthenticatedUser>.Success(
