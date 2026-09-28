@@ -17,7 +17,6 @@
 
   <ItemGroup>
       <Compile Remove="FederatedAuthenticationEndToEndIntegrationTests.cs" />
-      <Compile Remove="FederatedAuthenticationIntegrationTests.cs" />
   </ItemGroup>
 
   <ItemGroup>
