@@ -77,6 +77,61 @@ public sealed class FederatedAuthenticationIntegrationTests
     }
 
     [Test]
+    public async Task FindByFederatedIdentityAsync_AllowsSameOidAcrossDifferentMicrosoftTenants()
+    {
+        await using var context = await AuthDbContextFactory.CreateAsync(
+            MySQLAuthenticationDatabase.ConnectionString,
+            activeTenantId: Guid.NewGuid());
+
+        var firstUserId = Guid.NewGuid();
+        var secondUserId = Guid.NewGuid();
+
+        context.Users.AddRange(
+            new AuthUserEntity
+            {
+                UserId = firstUserId,
+                Email = "first@example.com",
+                PasswordHash = "first-hash"
+            },
+            new AuthUserEntity
+            {
+                UserId = secondUserId,
+                Email = "second@example.com",
+                PasswordHash = "second-hash"
+            });
+
+        context.FederatedIdentities.AddRange(
+            new AuthFederatedIdentityEntity
+            {
+                Provider = "Microsoft",
+                Subject = "tenant-A:oid-X",
+                UserId = firstUserId
+            },
+            new AuthFederatedIdentityEntity
+            {
+                Provider = "Microsoft",
+                Subject = "tenant-B:oid-X",
+                UserId = secondUserId
+            });
+
+        await context.SaveChangesAsync();
+
+        var store = new FederatedUserStore(context);
+
+        var firstUser = await store.FindByFederatedIdentityAsync(
+            "Microsoft",
+            "tenant-A:oid-X");
+        var secondUser = await store.FindByFederatedIdentityAsync(
+            "Microsoft",
+            "tenant-B:oid-X");
+
+        Assert.That(firstUser, Is.Not.Null);
+        Assert.That(firstUser!.UserId, Is.EqualTo(firstUserId));
+        Assert.That(secondUser, Is.Not.Null);
+        Assert.That(secondUser!.UserId, Is.EqualTo(secondUserId));
+    }
+
+    [Test]
     public async Task FederatedIdentity_CannotBePersistedTwiceForTheSameProviderAndSubject()
     {
         await using var context = await AuthDbContextFactory.CreateAsync(
