@@ -134,43 +134,52 @@ public sealed class FederatedAuthenticationIntegrationTests
     [Test]
     public async Task FederatedIdentity_CannotBePersistedTwiceForTheSameProviderAndSubject()
     {
-        await using var context = await AuthDbContextFactory.CreateAsync(
-            PostgreSQLAuthenticationDatabase.ConnectionString,
-            activeTenantId: Guid.NewGuid());
-
         var firstUserId = Guid.NewGuid();
         var secondUserId = Guid.NewGuid();
+        const string provider = "Google";
+        const string subject = "same-subject";
 
-        context.Users.AddRange(
-            new AuthUserEntity
+        await using (var firstContext = await AuthDbContextFactory.CreateAsync(
+                         PostgreSQLAuthenticationDatabase.ConnectionString,
+                         activeTenantId: Guid.NewGuid()))
+        {
+            firstContext.Users.Add(new AuthUserEntity
             {
                 UserId = firstUserId,
                 Email = "first@example.com",
                 PasswordHash = "first-hash"
-            },
-            new AuthUserEntity
-            {
-                UserId = secondUserId,
-                Email = "second@example.com",
-                PasswordHash = "second-hash"
             });
 
-        context.FederatedIdentities.AddRange(
-            new AuthFederatedIdentityEntity
+            firstContext.FederatedIdentities.Add(new AuthFederatedIdentityEntity
             {
-                Provider = "Google",
-                Subject = "same-subject",
+                Provider = provider,
+                Subject = subject,
                 UserId = firstUserId
-            },
-            new AuthFederatedIdentityEntity
-            {
-                Provider = "Google",
-                Subject = "same-subject",
-                UserId = secondUserId
             });
+
+            await firstContext.SaveChangesAsync();
+        }
+
+        await using var secondContext = await AuthDbContextFactory.CreateAsync(
+            PostgreSQLAuthenticationDatabase.ConnectionString,
+            activeTenantId: Guid.NewGuid());
+
+        secondContext.Users.Add(new AuthUserEntity
+        {
+            UserId = secondUserId,
+            Email = "second@example.com",
+            PasswordHash = "second-hash"
+        });
+
+        secondContext.FederatedIdentities.Add(new AuthFederatedIdentityEntity
+        {
+            Provider = provider,
+            Subject = subject,
+            UserId = secondUserId
+        });
 
         Assert.ThrowsAsync<DbUpdateException>(
-            async () => await context.SaveChangesAsync());
+            async () => await secondContext.SaveChangesAsync());
     }
 
     [Test]
