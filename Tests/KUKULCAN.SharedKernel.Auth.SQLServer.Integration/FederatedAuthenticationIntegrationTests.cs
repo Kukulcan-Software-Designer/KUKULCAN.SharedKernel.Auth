@@ -155,19 +155,29 @@ public sealed class FederatedAuthenticationIntegrationTests
                 PasswordHash = "second-hash"
             });
 
-        context.FederatedIdentities.AddRange(
-            new AuthFederatedIdentityEntity
-            {
-                Provider = "Google",
-                Subject = "same-subject",
-                UserId = firstUserId
-            },
-            new AuthFederatedIdentityEntity
-            {
-                Provider = "Google",
-                Subject = "same-subject",
-                UserId = secondUserId
-            });
+        context.FederatedIdentities.Add(new AuthFederatedIdentityEntity
+        {
+            Provider = "Google",
+            Subject = "same-subject",
+            UserId = firstUserId
+        });
+
+        await context.SaveChangesAsync();
+        context.ChangeTracker.Clear();
+
+        context.Users.Add(new AuthUserEntity
+        {
+            UserId = secondUserId,
+            Email = "second@example.com",
+            PasswordHash = "second-hash"
+        });
+
+        context.FederatedIdentities.Add(new AuthFederatedIdentityEntity
+        {
+            Provider = "Google",
+            Subject = "same-subject",
+            UserId = secondUserId
+        });
 
         Assert.ThrowsAsync<DbUpdateException>(
             async () => await context.SaveChangesAsync());
