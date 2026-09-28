@@ -63,6 +63,54 @@ public sealed class FederatedAuthenticationIntegrationTests
     }
 
     [TestCaseSource(nameof(Providers))]
+    public async Task AuthenticateAsync_WhenUserHasOnlyMembershipOutsideActiveTenant_ReturnsNoTenantAccess(
+        string providerName)
+    {
+        var activeTenantId = Guid.NewGuid();
+        var otherTenantId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        const string subject = "outside-active-tenant-subject";
+
+        await using var context = await AuthDbContextFactory.CreateAsync(
+            MySQLAuthenticationDatabase.ConnectionString,
+            activeTenantId);
+
+        context.Users.Add(new AuthUserEntity
+        {
+            UserId = userId,
+            Email = "federated-outside@example.com",
+            PasswordHash = "not-used"
+        });
+
+        context.TenantMemberships.Add(new AuthTenantMembershipEntity
+        {
+            UserId = userId,
+            TenantId = otherTenantId
+        });
+
+        context.FederatedIdentities.Add(new AuthFederatedIdentityEntity
+        {
+            Provider = providerName,
+            Subject = subject,
+            UserId = userId
+        });
+
+        await context.SaveChangesAsync();
+
+        var store = new FederatedUserStore(context);
+        var provider = new StubFederatedAuthenticationProvider(
+            providerName,
+            new FederatedIdentity(providerName, subject, "federated-outside@example.com"));
+        var service = new FederatedAuthenticationService([provider], store);
+
+        Result<AuthenticatedUser> result = await service.AuthenticateAsync(
+            new FederatedAuthenticationRequest(providerName, "credential"));
+
+        Assert.That(result.IsFailure, Is.True);
+        Assert.That(result.Error.Code, Is.EqualTo("Auth.NoTenantAccess"));
+    }
+
+    [TestCaseSource(nameof(Providers))]
     public async Task FindByFederatedIdentityAsync_WhenIdentityDoesNotExist_ReturnsNull(string providerName)
     {
         await using var context = await AuthDbContextFactory.CreateAsync(
