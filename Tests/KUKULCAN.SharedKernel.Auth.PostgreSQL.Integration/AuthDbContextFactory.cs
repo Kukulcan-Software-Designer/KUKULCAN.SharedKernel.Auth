@@ -20,7 +20,7 @@ public static class AuthDbContextFactory
             tenantContext,
             cancellationToken);
 
-    public static async Task<AuthDbContext> CreateAsync(
+    internal static async Task<AuthDbContext> CreateAsync(
         string connectionString,
         TestTenantContext tenantContext,
         CancellationToken cancellationToken = default)
@@ -44,7 +44,7 @@ public static class AuthDbContextFactory
         return context;
     }
 
-    public sealed class TestTenantContext(Guid tenantId) : ITenantContext
+    internal sealed class TestTenantContext(Guid tenantId) : ITenantContext
     {
         public Guid TenantId { get; set; } = tenantId;
     }
