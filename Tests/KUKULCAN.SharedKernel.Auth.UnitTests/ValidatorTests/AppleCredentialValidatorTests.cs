@@ -58,6 +58,63 @@ public sealed class AppleCredentialValidatorTests
     }
 
     [Test]
+    public async Task ValidateAsync_WithMalformedOpenIdConfiguration_ReturnsInvalidCredential()
+    {
+        using var client = new HttpClient(new StubHandler(_ =>
+            Json(new { issuer = Issuer, jwks_uri = "" })));
+
+        var result = await new AppleCredentialValidator(ClientId, client).ValidateAsync("credential");
+
+        result.IsFailure.Should().BeTrue();
+    }
+
+    [Test]
+    public async Task ValidateAsync_WithEmptySigningKeys_ReturnsInvalidCredential()
+    {
+        using var client = new HttpClient(new StubHandler(request =>
+        {
+            if (request.RequestUri?.AbsoluteUri.Contains("openid-configuration", StringComparison.OrdinalIgnoreCase) == true)
+                return Json(new { issuer = Issuer, jwks_uri = "https://appleid.apple.com/auth/keys" });
+
+            return Json(new { keys = Array.Empty<object>() });
+        }));
+
+        var result = await new AppleCredentialValidator(ClientId, client).ValidateAsync("credential");
+
+        result.IsFailure.Should().BeTrue();
+    }
+
+    [Test]
+    public async Task ValidateAsync_WithNoUsableSigningKeys_ReturnsInvalidCredential()
+    {
+        using var client = new HttpClient(new StubHandler(request =>
+        {
+            if (request.RequestUri?.AbsoluteUri.Contains("openid-configuration", StringComparison.OrdinalIgnoreCase) == true)
+                return Json(new { issuer = Issuer, jwks_uri = "https://appleid.apple.com/auth/keys" });
+
+            return Json(new
+            {
+                keys = new[]
+                {
+                    new
+                    {
+                        kty = "EC",
+                        use = "sig",
+                        alg = "ES256",
+                        kid = "apple-key",
+                        n = "invalid",
+                        e = "invalid"
+                    }
+                }
+            });
+        }));
+
+        var result = await new AppleCredentialValidator(ClientId, client).ValidateAsync("credential");
+
+        result.IsFailure.Should().BeTrue();
+    }
+
+    [Test]
     public async Task ValidateAsync_WhenOpenIdConfigurationRequestFails_ReturnsInvalidCredential()
     {
         using var client = new HttpClient(new StubHandler(_ =>
