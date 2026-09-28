@@ -25,6 +25,24 @@ public static class AuthDbContextFactory
         TestTenantContext tenantContext,
         CancellationToken cancellationToken = default)
     {
+        var context = CreateContext(connectionString, tenantContext);
+
+        await context.Database.EnsureDeletedAsync(cancellationToken).ConfigureAwait(false);
+        await context.Database.EnsureCreatedAsync(cancellationToken).ConfigureAwait(false);
+        return context;
+    }
+
+    internal static AuthDbContext CreateExisting(
+        string connectionString,
+        Guid activeTenantId)
+        => CreateContext(
+            connectionString,
+            new TestTenantContext(activeTenantId));
+
+    private static AuthDbContext CreateContext(
+        string connectionString,
+        TestTenantContext tenantContext)
+    {
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
 
         var options = Options.Create(new KukulcanDatabaseOptions
@@ -33,15 +51,11 @@ public static class AuthDbContextFactory
             ConnectionString = connectionString
         });
 
-        var context = new AuthDbContext(
+        return new AuthDbContext(
             options,
             tenantContext,
             new TestClock(),
             new TestDomainEventDispatcher());
-
-        await context.Database.EnsureDeletedAsync(cancellationToken).ConfigureAwait(false);
-        await context.Database.EnsureCreatedAsync(cancellationToken).ConfigureAwait(false);
-        return context;
     }
 
     internal sealed class TestTenantContext(Guid tenantId) : ITenantContext
