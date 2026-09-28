@@ -77,7 +77,7 @@ public sealed class FederatedAuthenticationIntegrationTests
     }
 
     [Test]
-    public async Task FederatedIdentity_CannotBePersistedTwiceForTheSameProviderAndSubject()
+    public async Task FindByFederatedIdentityAsync_AllowsSameOidAcrossDifferentMicrosoftTenants()
     {
         await using var context = await AuthDbContextFactory.CreateAsync(
             MySQLAuthenticationDatabase.ConnectionString,
@@ -103,19 +103,81 @@ public sealed class FederatedAuthenticationIntegrationTests
         context.FederatedIdentities.AddRange(
             new AuthFederatedIdentityEntity
             {
-                Provider = "Google",
-                Subject = "same-subject",
+                Provider = "Microsoft",
+                Subject = "tenant-A:oid-X",
                 UserId = firstUserId
             },
             new AuthFederatedIdentityEntity
             {
-                Provider = "Google",
-                Subject = "same-subject",
+                Provider = "Microsoft",
+                Subject = "tenant-B:oid-X",
                 UserId = secondUserId
             });
 
+        await context.SaveChangesAsync();
+
+        var store = new FederatedUserStore(context);
+
+        var firstUser = await store.FindByFederatedIdentityAsync(
+            "Microsoft",
+            "tenant-A:oid-X");
+        var secondUser = await store.FindByFederatedIdentityAsync(
+            "Microsoft",
+            "tenant-B:oid-X");
+
+        Assert.That(firstUser, Is.Not.Null);
+        Assert.That(firstUser!.UserId, Is.EqualTo(firstUserId));
+        Assert.That(secondUser, Is.Not.Null);
+        Assert.That(secondUser!.UserId, Is.EqualTo(secondUserId));
+    }
+
+    [Test]
+    public async Task FederatedIdentity_CannotBePersistedTwiceForTheSameProviderAndSubject()
+    {
+        var activeTenantId = Guid.NewGuid();
+
+        await using var firstContext = await AuthDbContextFactory.CreateAsync(
+            MySQLAuthenticationDatabase.ConnectionString,
+            activeTenantId);
+
+        var firstUserId = Guid.NewGuid();
+        firstContext.Users.Add(new AuthUserEntity
+        {
+            UserId = firstUserId,
+            Email = "first@example.com",
+            PasswordHash = "first-hash"
+        });
+
+        firstContext.FederatedIdentities.Add(new AuthFederatedIdentityEntity
+        {
+            Provider = "Google",
+            Subject = "same-subject",
+            UserId = firstUserId
+        });
+
+        await firstContext.SaveChangesAsync();
+
+        await using var secondContext = AuthDbContextFactory.CreateExisting(
+            MySQLAuthenticationDatabase.ConnectionString,
+            activeTenantId);
+
+        var secondUserId = Guid.NewGuid();
+        secondContext.Users.Add(new AuthUserEntity
+        {
+            UserId = secondUserId,
+            Email = "second@example.com",
+            PasswordHash = "second-hash"
+        });
+
+        secondContext.FederatedIdentities.Add(new AuthFederatedIdentityEntity
+        {
+            Provider = "Google",
+            Subject = "same-subject",
+            UserId = secondUserId
+        });
+
         Assert.ThrowsAsync<DbUpdateException>(
-            async () => await context.SaveChangesAsync());
+            async () => await secondContext.SaveChangesAsync());
     }
 
     [Test]
