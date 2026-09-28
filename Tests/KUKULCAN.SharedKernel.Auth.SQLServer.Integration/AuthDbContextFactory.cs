@@ -41,9 +41,9 @@ public static class AuthDbContextFactory
         return context;
     }
 
-    private sealed class TestTenantContext(Guid tenantId) : ITenantContext
+    public sealed class TestTenantContext(Guid tenantId) : ITenantContext
     {
-        public Guid TenantId { get; } = tenantId;
+        public Guid TenantId { get; set; } = tenantId;
     }
 
     private sealed class TestClock : IClock
