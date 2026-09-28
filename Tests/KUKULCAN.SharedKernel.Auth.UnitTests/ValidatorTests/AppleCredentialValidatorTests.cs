@@ -58,6 +58,76 @@ public sealed class AppleCredentialValidatorTests
     }
 
     [Test]
+    public async Task ValidateAsync_WhenOpenIdConfigurationRequestFails_ReturnsInvalidCredential()
+    {
+        using var client = new HttpClient(new StubHandler(_ =>
+            new HttpResponseMessage(HttpStatusCode.ServiceUnavailable)));
+
+        var result = await new AppleCredentialValidator(ClientId, client).ValidateAsync("credential");
+
+        result.IsFailure.Should().BeTrue();
+    }
+
+    [Test]
+    public async Task ValidateAsync_WhenSigningKeysRequestFails_ReturnsInvalidCredential()
+    {
+        using var key = RSA.Create(2048);
+        using var client = new HttpClient(new StubHandler(request =>
+        {
+            if (request.RequestUri?.AbsoluteUri.Contains("openid-configuration", StringComparison.OrdinalIgnoreCase) == true)
+                return Json(new { issuer = Issuer, jwks_uri = "https://appleid.apple.com/auth/keys" });
+
+            return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+        }));
+        var token = CreateToken(key, "apple-key", Issuer, ClientId, new Dictionary<string, object>
+        {
+            ["sub"] = "apple-subject",
+            ["exp"] = DateTimeOffset.UtcNow.AddMinutes(5).ToUnixTimeSeconds()
+        });
+
+        var result = await new AppleCredentialValidator(ClientId, client).ValidateAsync(token);
+
+        result.IsFailure.Should().BeTrue();
+    }
+
+    [Test]
+    public async Task ValidateAsync_WithMalformedJwkBase64Url_ReturnsInvalidCredential()
+    {
+        using var key = RSA.Create(2048);
+        using var client = new HttpClient(new StubHandler(request =>
+        {
+            if (request.RequestUri?.AbsoluteUri.Contains("openid-configuration", StringComparison.OrdinalIgnoreCase) == true)
+                return Json(new { issuer = Issuer, jwks_uri = "https://appleid.apple.com/auth/keys" });
+
+            var parameters = key.ExportParameters(false);
+            return Json(new
+            {
+                keys = new[]
+                {
+                    new
+                    {
+                        kty = "RSA",
+                        use = "sig",
+                        alg = "RS256",
+                        kid = "apple-key",
+                        n = B64(parameters.Modulus!),
+                        e = "A"
+                    }
+                }
+            });
+        }));
+        var token = CreateToken(key, "apple-key", Issuer, ClientId, new Dictionary<string, object>
+        {
+            ["sub"] = "apple-subject",
+            ["exp"] = DateTimeOffset.UtcNow.AddMinutes(5).ToUnixTimeSeconds()
+        });
+
+        var result = await new AppleCredentialValidator(ClientId, client).ValidateAsync(token);
+
+        result.IsFailure.Should().BeTrue();
+    }
+
+    [Test]
     public async Task ValidateAsync_WithUntrustedSignature_RejectsToken()
     {
         using var signingKey = RSA.Create(2048);
