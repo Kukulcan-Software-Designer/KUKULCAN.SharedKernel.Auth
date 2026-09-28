@@ -104,6 +104,14 @@ public sealed class AppleCredentialValidator : IFederatedCredentialValidator
         {
             return Result<FederatedIdentity>.Failure(InvalidFederatedCredential);
         }
+        catch (HttpRequestException)
+        {
+            return Result<FederatedIdentity>.Failure(InvalidFederatedCredential);
+        }
+        catch (FormatException)
+        {
+            return Result<FederatedIdentity>.Failure(InvalidFederatedCredential);
+        }
     }
 
     private async Task<OpenIdConfiguration> GetOpenIdConfigurationAsync(
