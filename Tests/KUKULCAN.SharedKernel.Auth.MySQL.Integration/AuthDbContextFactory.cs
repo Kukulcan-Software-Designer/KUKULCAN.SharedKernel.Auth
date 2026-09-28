@@ -11,10 +11,37 @@ namespace KUKULCAN.SharedKernel.Auth.MySQL.Integration;
 public static class AuthDbContextFactory
 {
     /// <summary>Creates a fresh authentication schema for the test.</summary>
-    public static async Task<AuthDbContext> CreateAsync(
+    public static Task<AuthDbContext> CreateAsync(
         string connectionString,
         Guid activeTenantId,
         CancellationToken cancellationToken = default)
+        => CreateAsync(
+            connectionString,
+            new TestTenantContext(activeTenantId),
+            cancellationToken);
+
+    internal static async Task<AuthDbContext> CreateAsync(
+        string connectionString,
+        TestTenantContext tenantContext,
+        CancellationToken cancellationToken = default)
+    {
+        var context = CreateContext(connectionString, tenantContext);
+
+        await context.Database.EnsureDeletedAsync(cancellationToken).ConfigureAwait(false);
+        await context.Database.EnsureCreatedAsync(cancellationToken).ConfigureAwait(false);
+        return context;
+    }
+
+    internal static AuthDbContext CreateExisting(
+        string connectionString,
+        Guid activeTenantId)
+        => CreateContext(
+            connectionString,
+            new TestTenantContext(activeTenantId));
+
+    private static AuthDbContext CreateContext(
+        string connectionString,
+        TestTenantContext tenantContext)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
 
@@ -24,20 +51,16 @@ public static class AuthDbContextFactory
             ConnectionString = connectionString
         });
 
-        var context = new AuthDbContext(
+        return new AuthDbContext(
             options,
-            new TestTenantContext(activeTenantId),
+            tenantContext,
             new TestClock(),
             new TestDomainEventDispatcher());
-
-        await context.Database.EnsureDeletedAsync(cancellationToken).ConfigureAwait(false);
-        await context.Database.EnsureCreatedAsync(cancellationToken).ConfigureAwait(false);
-        return context;
     }
 
-    private sealed class TestTenantContext(Guid tenantId) : ITenantContext
+    internal sealed class TestTenantContext(Guid tenantId) : ITenantContext
     {
-        public Guid TenantId { get; } = tenantId;
+        public Guid TenantId { get; set; } = tenantId;
     }
 
     private sealed class TestClock : IClock

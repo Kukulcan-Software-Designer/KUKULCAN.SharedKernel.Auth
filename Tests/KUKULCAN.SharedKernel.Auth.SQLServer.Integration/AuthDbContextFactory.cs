@@ -12,9 +12,18 @@ namespace KUKULCAN.SharedKernel.Auth.SQLServer.Integration;
 public static class AuthDbContextFactory
 {
     /// <summary>Creates a fresh authentication database and its context.</summary>
-    public static async Task<AuthDbContext> CreateAsync(
+    public static Task<AuthDbContext> CreateAsync(
         string connectionString,
         Guid activeTenantId,
+        CancellationToken cancellationToken = default)
+        => CreateAsync(
+            connectionString,
+            new TestTenantContext(activeTenantId),
+            cancellationToken);
+
+    internal static async Task<AuthDbContext> CreateAsync(
+        string connectionString,
+        TestTenantContext tenantContext,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
@@ -33,7 +42,7 @@ public static class AuthDbContextFactory
 
         var context = new AuthDbContext(
             databaseOptions,
-            new TestTenantContext(activeTenantId),
+            tenantContext,
             new TestClock(),
             new TestDomainEventDispatcher());
 
@@ -41,9 +50,9 @@ public static class AuthDbContextFactory
         return context;
     }
 
-    private sealed class TestTenantContext(Guid tenantId) : ITenantContext
+    internal sealed class TestTenantContext(Guid tenantId) : ITenantContext
     {
-        public Guid TenantId { get; } = tenantId;
+        public Guid TenantId { get; set; } = tenantId;
     }
 
     private sealed class TestClock : IClock

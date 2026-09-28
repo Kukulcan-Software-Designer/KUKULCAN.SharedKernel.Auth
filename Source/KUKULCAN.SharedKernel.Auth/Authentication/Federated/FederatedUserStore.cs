@@ -39,6 +39,11 @@ public sealed class FederatedUserStore : IFederatedUserStore
             .SingleAsync(entity => entity.UserId == identity.UserId, cancellationToken)
             .ConfigureAwait(false);
 
+        var hasActiveTenantAccess = await _context.TenantMemberships
+            .AsNoTracking()
+            .AnyAsync(entity => entity.UserId == user.UserId, cancellationToken)
+            .ConfigureAwait(false);
+
         var tenantMemberships = await _context.TenantMemberships
             .IgnoreQueryFilters()
             .AsNoTracking()
@@ -51,6 +56,7 @@ public sealed class FederatedUserStore : IFederatedUserStore
             user.UserId,
             user.Email,
             user.PasswordHash,
-            tenantMemberships.Select(tenantId => new TenantMembership(tenantId)).ToArray());
+            tenantMemberships.Select(tenantId => new TenantMembership(tenantId)).ToArray(),
+            hasActiveTenantAccess);
     }
 }

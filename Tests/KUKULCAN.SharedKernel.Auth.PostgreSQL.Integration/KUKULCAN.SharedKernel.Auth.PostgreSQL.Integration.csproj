@@ -17,11 +17,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="FederatedAuthenticationEndToEndIntegrationTests.cs" />
-    <Compile Remove="FederatedAuthenticationIntegrationTests.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.*" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.*" />
     <PackageReference Include="Testcontainers.PostgreSql" Version="4.*" />

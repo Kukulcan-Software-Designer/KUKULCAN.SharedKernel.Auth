@@ -363,6 +363,67 @@ public sealed class SqlServerLocalAuthenticationIntegrationTests
     }
 
     [Test]
+    public async Task AuthenticateAsync_WhenActiveTenantChangesBetweenUserMemberships_RemainsSuccessful()
+    {
+        var firstTenantId = Guid.NewGuid();
+        var secondTenantId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        const string email = "active-tenant-switch@example.com";
+        const string password = "CorrectPassword!";
+        var passwordHasher = new PasswordHasher();
+        var tenantContext = new AuthDbContextFactory.TestTenantContext(firstTenantId);
+
+        await using var context = await AuthDbContextFactory.CreateAsync(
+            SqlServerAuthenticationDatabase.ConnectionString,
+            tenantContext);
+
+        context.Users.Add(new AuthUserEntity
+        {
+            UserId = userId,
+            Email = email,
+            PasswordHash = passwordHasher.Hash(password)
+        });
+
+        context.TenantMemberships.AddRange(
+            new AuthTenantMembershipEntity
+            {
+                UserId = userId,
+                TenantId = firstTenantId
+            },
+            new AuthTenantMembershipEntity
+            {
+                UserId = userId,
+                TenantId = secondTenantId
+            });
+
+        await context.SaveChangesAsync();
+
+        var service = new LocalAuthenticationService(
+            new LocalUserStore(context),
+            passwordHasher);
+
+        var firstResult = await service.AuthenticateAsync(
+            new LocalAuthenticationRequest(email, password));
+
+        Assert.That(firstResult.IsSuccess, Is.True);
+        Assert.That(
+            firstResult.Value.Tenants.Select(x => x.TenantId),
+            Is.EquivalentTo(new[] { firstTenantId, secondTenantId }));
+
+        tenantContext.TenantId = secondTenantId;
+
+        var secondResult = await service.AuthenticateAsync(
+            new LocalAuthenticationRequest(email, password));
+
+        Assert.That(secondResult.IsSuccess, Is.True);
+        Assert.That(secondResult.Value.UserId, Is.EqualTo(userId));
+        Assert.That(secondResult.Value.Email, Is.EqualTo(email));
+        Assert.That(
+            secondResult.Value.Tenants.Select(x => x.TenantId),
+            Is.EquivalentTo(new[] { firstTenantId, secondTenantId }));
+    }
+
+    [Test]
     public async Task UserDeletion_CascadesToTenantMemberships()
     {
         var tenantId = Guid.NewGuid();

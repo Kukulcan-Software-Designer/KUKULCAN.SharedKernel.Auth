@@ -130,7 +130,11 @@ public sealed class FederatedAuthenticationServiceTests
             provider => provider.AuthenticateAsync(
                 It.IsAny<FederatedAuthenticationRequest>(), It.IsAny<CancellationToken>()),
             Times.Once);
-        otherProvider.VerifyNoOtherCalls();
+        otherProvider.VerifyGet(provider => provider.Provider, Times.Once);
+        userStore.Verify(
+            store => store.FindByFederatedIdentityAsync(
+                providerName, expectedIdentity.Subject, It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [TestCase("Google")]
@@ -151,7 +155,8 @@ public sealed class FederatedAuthenticationServiceTests
         var user = CreateUser([new TenantMembership(Guid.NewGuid())]);
         var userStore = new Mock<IFederatedUserStore>(MockBehavior.Strict);
         userStore
-            .Setup(store => store.FindByFederatedIdentityAsync(providerName, identity.Subject, It.IsAny<CancellationToken>()))
+            .Setup(store => store.FindByFederatedIdentityAsync(
+                providerName.ToUpperInvariant(), identity.Subject, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         var service = new FederatedAuthenticationService([provider.Object], userStore.Object);
@@ -162,6 +167,8 @@ public sealed class FederatedAuthenticationServiceTests
         result.IsSuccess.Should().BeTrue();
         provider.Verify(item => item.AuthenticateAsync(
             It.IsAny<FederatedAuthenticationRequest>(), It.IsAny<CancellationToken>()), Times.Once);
+        userStore.Verify(item => item.FindByFederatedIdentityAsync(
+            providerName.ToUpperInvariant(), identity.Subject, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
@@ -274,8 +281,48 @@ public sealed class FederatedAuthenticationServiceTests
 
         result.IsFailure.Should().BeTrue();
         result.Error.Code.Should().Be("Auth.FederatedIdentityNotLinked");
-        userStore.VerifyNoOtherCalls();
+        userStore.Verify(store => store.FindByFederatedIdentityAsync(
+            providerName, identity.Subject, It.IsAny<CancellationToken>()), Times.Once);
     }
+
+    [Test]
+    public async Task AuthenticateAsync_WhenLinkedUserHasNoActiveTenantAccess_ReturnsNoTenantAccess()
+    {
+        const string providerName = "Google";
+        var identity = new FederatedIdentity(providerName, "provider-subject", "user@example.com");
+        var user = new LocalUser(
+            Guid.NewGuid(),
+            Email: "user@example.com",
+            PasswordHash: "stored-password-hash",
+            Tenants: [new TenantMembership(Guid.NewGuid())],
+            HasActiveTenantAccess: false);
+
+        var provider = new Mock<IFederatedAuthenticationProvider>(MockBehavior.Strict);
+        provider.SetupGet(item => item.Provider).Returns(providerName);
+        provider
+            .Setup(item => item.AuthenticateAsync(
+                It.IsAny<FederatedAuthenticationRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<FederatedIdentity>.Success(identity));
+
+        var userStore = new Mock<IFederatedUserStore>(MockBehavior.Strict);
+        userStore
+            .Setup(store => store.FindByFederatedIdentityAsync(
+                providerName, identity.Subject, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+
+        var service = new FederatedAuthenticationService([provider.Object], userStore.Object);
+
+        Result<AuthenticatedUser> result = await service.AuthenticateAsync(
+            new FederatedAuthenticationRequest(providerName, "credential"));
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Code.Should().Be("Auth.NoTenantAccess");
+        userStore.Verify(
+            store => store.FindByFederatedIdentityAsync(
+                providerName, identity.Subject, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
 
     [Test]
     public async Task AuthenticateAsync_WhenLinkedUserHasMultipleTenants_ReturnsAllTenantMemberships()
