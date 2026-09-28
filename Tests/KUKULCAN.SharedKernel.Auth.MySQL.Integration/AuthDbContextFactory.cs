@@ -17,7 +17,7 @@ public static class AuthDbContextFactory
         CancellationToken cancellationToken = default)
         => CreateAsync(
             connectionString,
-            tenantContext,
+            new TestTenantContext(activeTenantId),
             cancellationToken);
 
     internal static async Task<AuthDbContext> CreateAsync(
@@ -35,7 +35,7 @@ public static class AuthDbContextFactory
 
         var context = new AuthDbContext(
             options,
-            new TestTenantContext(activeTenantId),
+            tenantContext,
             new TestClock(),
             new TestDomainEventDispatcher());
 
