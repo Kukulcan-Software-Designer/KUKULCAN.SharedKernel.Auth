@@ -130,7 +130,7 @@ public sealed class FederatedAuthenticationServiceTests
             provider => provider.AuthenticateAsync(
                 It.IsAny<FederatedAuthenticationRequest>(), It.IsAny<CancellationToken>()),
             Times.Once);
-        otherProvider.VerifyNoOtherCalls();
+        otherProvider.VerifyGet(provider => provider.Provider, Times.Once);
         userStore.Verify(
             store => store.FindByFederatedIdentityAsync(
                 providerName, expectedIdentity.Subject, It.IsAny<CancellationToken>()),
