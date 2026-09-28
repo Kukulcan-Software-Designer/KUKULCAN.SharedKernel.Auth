@@ -8,6 +8,9 @@ using KUKULCAN.SharedKernel.Results;
 
 namespace KUKULCAN.SharedKernel.Auth.Authentication.Federated;
 
+/// <summary>
+/// Validates Apple Sign in with Apple identity tokens.
+/// </summary>
 public sealed class AppleCredentialValidator : IFederatedCredentialValidator
 {
     private const string OpenIdConfigurationUrl =
@@ -24,6 +27,11 @@ public sealed class AppleCredentialValidator : IFederatedCredentialValidator
         MapInboundClaims = false
     };
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AppleCredentialValidator"/> class.
+    /// </summary>
+    /// <param name="clientId">The Apple client identifier expected in the token audience.</param>
+    /// <param name="httpClient">The HTTP client used to retrieve Apple's OpenID Connect metadata and signing keys.</param>
     public AppleCredentialValidator(string clientId, HttpClient httpClient)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(clientId);
@@ -33,6 +41,12 @@ public sealed class AppleCredentialValidator : IFederatedCredentialValidator
         _httpClient = httpClient;
     }
 
+    /// <summary>
+    /// Validates an Apple identity token and returns its federated identity.
+    /// </summary>
+    /// <param name="credential">The Apple identity token to validate.</param>
+    /// <param name="cancellationToken">The cancellation token for metadata and signing-key requests.</param>
+    /// <returns>The validated Apple federated identity, or a failure result when the credential is invalid.</returns>
     public async Task<Result<FederatedIdentity>> ValidateAsync(
         string credential,
         CancellationToken cancellationToken = default)
