@@ -160,7 +160,7 @@ public sealed class FederatedAuthenticationIntegrationTests
             await firstContext.SaveChangesAsync();
         }
 
-        await using var secondContext = await AuthDbContextFactory.CreateAsync(
+        await using var secondContext = AuthDbContextFactory.CreateExisting(
             PostgreSQLAuthenticationDatabase.ConnectionString,
             activeTenantId: Guid.NewGuid());
 
