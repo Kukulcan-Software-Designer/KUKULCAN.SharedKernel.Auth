@@ -292,9 +292,9 @@ public sealed class FederatedAuthenticationServiceTests
         var identity = new FederatedIdentity(providerName, "provider-subject", "user@example.com");
         var user = new LocalUser(
             Guid.NewGuid(),
-            userEmail: "user@example.com",
-            passwordHash: "stored-password-hash",
-            tenants: [new TenantMembership(Guid.NewGuid())],
+            Email: "user@example.com",
+            PasswordHash: "stored-password-hash",
+            Tenants: [new TenantMembership(Guid.NewGuid())],
             HasActiveTenantAccess: false);
 
         var provider = new Mock<IFederatedAuthenticationProvider>(MockBehavior.Strict);
