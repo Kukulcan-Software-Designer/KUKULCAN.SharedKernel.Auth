@@ -11,9 +11,18 @@ namespace KUKULCAN.SharedKernel.Auth.PostgreSQL.Integration;
 public static class AuthDbContextFactory
 {
     /// <summary>Creates a fresh authentication schema for the test.</summary>
-    public static async Task<AuthDbContext> CreateAsync(
+    public static Task<AuthDbContext> CreateAsync(
         string connectionString,
         Guid activeTenantId,
+        CancellationToken cancellationToken = default)
+        => CreateAsync(
+            connectionString,
+            tenantContext,
+            cancellationToken);
+
+    public static async Task<AuthDbContext> CreateAsync(
+        string connectionString,
+        TestTenantContext tenantContext,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
