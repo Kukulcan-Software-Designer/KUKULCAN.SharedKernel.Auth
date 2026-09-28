@@ -69,17 +69,21 @@ The existing validator tests define the required validation behavior for:
 
 ## Future Authentication API
 
-The project is intended to expose authentication through a Web API boundary.
+**KUKULCAN.SharedKernel.Auth is a class library and does not host an ASP.NET Core application.**
+
+The authentication API is an application-level HTTP boundary that consumes this library. The Web API host, routing, HTTP status mapping and public transport contract therefore belong to the consuming application or to a separate API host project.
 
 Future work includes:
 
-- HTTP authentication endpoints;
-- consistent authentication error responses;
-- JWT issuance and validation;
+- HTTP authentication endpoints implemented outside the class library;
+- consistent mapping of authentication results to HTTP responses;
+- JWT issuance and validation at the application/API boundary;
 - API-level multi-tenant authentication responses;
 - documentation of the public HTTP contract.
 
-The API layer should be implemented only after its executable contract has been defined by tests.
+API tests must execute against a real ASP.NET Core host. They must not be placed in the library's unit-test project or introduce a `Program`/Web API host into `Source/KUKULCAN.SharedKernel.Auth`.
+
+The API layer should be implemented only after its executable HTTP contract has been defined by tests in the project that owns the API host.
 
 ## Provider Integration
 

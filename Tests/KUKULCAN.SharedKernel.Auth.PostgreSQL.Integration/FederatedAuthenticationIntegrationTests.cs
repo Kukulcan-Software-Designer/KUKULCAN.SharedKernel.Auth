@@ -111,6 +111,134 @@ public sealed class FederatedAuthenticationIntegrationTests
     }
 
     [TestCaseSource(nameof(Providers))]
+    public async Task AuthenticateAsync_WhenUserHasNoTenant_ReturnsNoTenantAccess(string providerName)
+    {
+        var userId = Guid.NewGuid();
+        const string subject = "no-tenant-subject";
+
+        await using var context = await AuthDbContextFactory.CreateAsync(
+            PostgreSQLAuthenticationDatabase.ConnectionString,
+            activeTenantId: Guid.NewGuid());
+
+        context.Users.Add(new AuthUserEntity
+        {
+            UserId = userId,
+            Email = "federated-no-tenant@example.com",
+            PasswordHash = "not-used"
+        });
+
+        context.FederatedIdentities.Add(new AuthFederatedIdentityEntity
+        {
+            Provider = providerName,
+            Subject = subject,
+            UserId = userId
+        });
+
+        await context.SaveChangesAsync();
+
+        var store = new FederatedUserStore(context);
+        var provider = new StubFederatedAuthenticationProvider(
+            providerName,
+            new FederatedIdentity(providerName, subject, "federated-no-tenant@example.com"));
+        var service = new FederatedAuthenticationService([provider], store);
+
+        Result<AuthenticatedUser> result = await service.AuthenticateAsync(
+            new FederatedAuthenticationRequest(providerName, "credential"));
+
+        Assert.That(result.IsFailure, Is.True);
+        Assert.That(result.Error.Code, Is.EqualTo("Auth.NoTenantAccess"));
+    }
+
+    [TestCaseSource(nameof(Providers))]
+    public async Task AuthenticateAsync_WhenActiveTenantChangesBetweenUserMemberships_RemainsSuccessful(
+        string providerName)
+    {
+        var firstTenantId = Guid.NewGuid();
+        var secondTenantId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        const string subject = "tenant-switch-subject";
+
+        var tenantContext = new AuthDbContextFactory.TestTenantContext(firstTenantId);
+        await using var context = await AuthDbContextFactory.CreateAsync(
+            PostgreSQLAuthenticationDatabase.ConnectionString,
+            tenantContext);
+
+        context.Users.Add(new AuthUserEntity
+        {
+            UserId = userId,
+            Email = "federated-switch@example.com",
+            PasswordHash = "not-used"
+        });
+
+        context.TenantMemberships.AddRange(
+            new AuthTenantMembershipEntity { UserId = userId, TenantId = firstTenantId },
+            new AuthTenantMembershipEntity { UserId = userId, TenantId = secondTenantId });
+
+        context.FederatedIdentities.Add(new AuthFederatedIdentityEntity
+        {
+            Provider = providerName,
+            Subject = subject,
+            UserId = userId
+        });
+
+        await context.SaveChangesAsync();
+
+        var store = new FederatedUserStore(context);
+        var provider = new StubFederatedAuthenticationProvider(
+            providerName,
+            new FederatedIdentity(providerName, subject, "federated-switch@example.com"));
+        var service = new FederatedAuthenticationService([provider], store);
+        var request = new FederatedAuthenticationRequest(providerName, "credential");
+
+        Result<AuthenticatedUser> firstResult = await service.AuthenticateAsync(request);
+        tenantContext.TenantId = secondTenantId;
+        Result<AuthenticatedUser> secondResult = await service.AuthenticateAsync(request);
+
+        Assert.That(firstResult.IsSuccess, Is.True);
+        Assert.That(secondResult.IsSuccess, Is.True);
+        Assert.That(firstResult.Value.Tenants.Select(x => x.TenantId),
+            Is.EquivalentTo(new[] { firstTenantId, secondTenantId }));
+        Assert.That(secondResult.Value.Tenants.Select(x => x.TenantId),
+            Is.EquivalentTo(new[] { firstTenantId, secondTenantId }));
+    }
+
+    [Test]
+    public async Task UserDeletion_CascadesToFederatedIdentities()
+    {
+        var userId = Guid.NewGuid();
+
+        await using var context = await AuthDbContextFactory.CreateAsync(
+            PostgreSQLAuthenticationDatabase.ConnectionString,
+            activeTenantId: Guid.NewGuid());
+
+        context.Users.Add(new AuthUserEntity
+        {
+            UserId = userId,
+            Email = "federated-delete@example.com",
+            PasswordHash = "not-used"
+        });
+
+        context.FederatedIdentities.Add(new AuthFederatedIdentityEntity
+        {
+            Provider = "Google",
+            Subject = "delete-subject",
+            UserId = userId
+        });
+
+        await context.SaveChangesAsync();
+
+        var user = await context.Users.SingleAsync(entity => entity.UserId == userId);
+        context.Users.Remove(user);
+        await context.SaveChangesAsync();
+
+        var identityExists = await context.FederatedIdentities
+            .IgnoreQueryFilters()
+            .AnyAsync(identity => identity.UserId == userId);
+
+        Assert.That(identityExists, Is.False);
+    }
+
+    [TestCaseSource(nameof(Providers))]
     public async Task FindByFederatedIdentityAsync_WhenIdentityDoesNotExist_ReturnsNull(string providerName)
     {
         await using var context = await AuthDbContextFactory.CreateAsync(
