@@ -13,6 +13,26 @@ public sealed class AppleCredentialValidatorTests
     private const string ClientId = "com.kukulcan.signin";
     private const string Issuer = "https://appleid.apple.com";
 
+    [TestCase(null)]
+    [TestCase("")]
+    [TestCase("   ")]
+    public void Constructor_WithInvalidClientId_ThrowsArgumentException(string? clientId)
+    {
+        using var client = new HttpClient();
+
+        var act = () => new AppleCredentialValidator(clientId!, client);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Test]
+    public void Constructor_WithNullHttpClient_ThrowsArgumentNullException()
+    {
+        var act = () => new AppleCredentialValidator(ClientId, null!);
+
+        act.Should().Throw<ArgumentNullException>();
+    }
+
     [Test]
     public async Task ValidateAsync_WithValidIdentityToken_ReturnsSubAndEmail()
     {
