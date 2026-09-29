@@ -23,7 +23,7 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Restore
-        run: dotnet restore "Source/KUKULCAN.SharedKernel.Auth/KUKULCAN.SharedKernel.Auth.csproj"
+        run: dotnet restore "KUKULCAN.SharedKernel.Auth.slnx"
 
       - name: Build
         run: dotnet build "KUKULCAN.SharedKernel.Auth.slnx" --configuration Release --no-restore
