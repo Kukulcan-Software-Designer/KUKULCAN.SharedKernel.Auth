@@ -2,7 +2,8 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using FluentAssertions;\nusing NUnit.Framework;
+using FluentAssertions;
+using NUnit.Framework;
 
 namespace KUKULCAN.SharedKernel.Auth.UnitTests.ValidatorTests;
 
@@ -252,5 +253,13 @@ public sealed class AppleCredentialValidatorTests
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
             Task.FromResult(handler(request));
+    }
+
+    private sealed class CancellationStubHandler : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken) =>
+            Task.FromCanceled<HttpResponseMessage>(cancellationToken);
     }
 }
