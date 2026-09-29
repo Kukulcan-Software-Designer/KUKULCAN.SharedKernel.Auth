@@ -10,32 +10,31 @@ We pledge to make participation welcoming and respectful regardless of age, disa
 
 Expected behavior includes:
 
-- Respectful and constructive technical discussion.
-- Giving and accepting feedback professionally.
-- Respecting different experiences and technical perspectives.
-- Taking responsibility for mistakes.
-- Focusing on the interests of the project and its community.
-- Protecting confidential information.
+- respectful and constructive technical discussion;
+- professional feedback and review;
+- respect for different technical perspectives;
+- responsibility for mistakes and corrections;
+- protection of confidential information;
+- discussion focused on the project and its users.
 
 Unacceptable behavior includes:
 
-- Harassment or discrimination.
-- Personal attacks, insults or threats.
-- Trolling or deliberately disruptive behavior.
-- Publishing private information without permission.
-- Any conduct that would reasonably be considered inappropriate in a professional environment.
+- harassment or discrimination;
+- personal attacks, insults or threats;
+- deliberate disruption or trolling;
+- publication of private information without permission;
+- disclosure of passwords, tokens, keys or other credentials;
+- conduct inappropriate for a professional technical environment.
 
 ## Scope
 
-This Code of Conduct applies to all project spaces, including GitHub Issues, Discussions, Pull Requests, documentation and other project-related communication.
-
-It also applies when an individual is officially representing the project.
+This Code of Conduct applies to Issues, Discussions, Pull Requests, code review, documentation and other project-related communication.
 
 ## Reporting
 
-If you experience or witness unacceptable behavior, report it privately to the project maintainers.
+Report unacceptable behavior privately to the project maintainers.
 
-Security vulnerabilities must **not** be reported through public channels. Follow [SECURITY.md](SECURITY.md) instead.
+Security vulnerabilities must **not** be reported through public GitHub channels. Follow [SECURITY.md](SECURITY.md).
 
 ## Enforcement
 

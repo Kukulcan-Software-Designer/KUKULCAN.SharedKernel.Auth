@@ -2,6 +2,7 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using FluentAssertions;
 using NUnit.Framework;
 
 namespace KUKULCAN.SharedKernel.Auth.UnitTests.ValidatorTests;
@@ -11,6 +12,26 @@ public sealed class AppleCredentialValidatorTests
 {
     private const string ClientId = "com.kukulcan.signin";
     private const string Issuer = "https://appleid.apple.com";
+
+    [TestCase(null)]
+    [TestCase("")]
+    [TestCase("   ")]
+    public void Constructor_WithInvalidClientId_ThrowsArgumentException(string? clientId)
+    {
+        using var client = new HttpClient();
+
+        var act = () => new AppleCredentialValidator(clientId!, client);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Test]
+    public void Constructor_WithNullHttpClient_ThrowsArgumentNullException()
+    {
+        var act = () => new AppleCredentialValidator(ClientId, null!);
+
+        act.Should().Throw<ArgumentNullException>();
+    }
 
     [Test]
     public async Task ValidateAsync_WithValidIdentityToken_ReturnsSubAndEmail()
@@ -55,6 +76,19 @@ public sealed class AppleCredentialValidatorTests
         var result = await new AppleCredentialValidator(ClientId, client).ValidateAsync(token);
 
         result.IsFailure.Should().BeTrue();
+    }
+
+    [Test]
+    public async Task ValidateAsync_WhenCancelled_PropagatesOperationCanceledException()
+    {
+        using var client = new HttpClient(new CancellationStubHandler());
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+
+        var act = () => new AppleCredentialValidator(ClientId, client)
+            .ValidateAsync("credential", cancellation.Token);
+
+        await act.Should().ThrowAsync<OperationCanceledException>();
     }
 
     [Test]
@@ -239,5 +273,13 @@ public sealed class AppleCredentialValidatorTests
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
             Task.FromResult(handler(request));
+    }
+
+    private sealed class CancellationStubHandler : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken) =>
+            Task.FromCanceled<HttpResponseMessage>(cancellationToken);
     }
 }

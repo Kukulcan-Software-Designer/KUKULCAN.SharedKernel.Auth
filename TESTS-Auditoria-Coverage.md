@@ -2,178 +2,126 @@
 
 ## Purpose
 
-This document describes how **KUKULCAN.SharedKernel.Auth** audits the quality and coverage of its automated tests.
+This document defines how **KUKULCAN.SharedKernel.Auth** audits test quality, behavior coverage and execution coverage.
 
-The objective is not to maximize a coverage percentage artificially. Coverage is used as an audit signal to identify executable code paths that are not represented by meaningful tests.
+The objective is **not** to maximize a coverage percentage artificially. Coverage is an audit signal combined with the functional matrix.
 
 ## Test Architecture
 
-The repository separates tests by responsibility and database provider.
-
 ### Unit Tests
 
-`Tests/KUKULCAN.SharedKernel.Auth.UnitTests`
+`Tests/KUKULCAN.SharedKernel.Auth.UnitTests` validates deterministic behavior without a real database or live provider.
 
-Unit tests validate deterministic application and authentication behavior without requiring a real database or external identity provider.
+Coverage includes local authentication, email normalization, password verification, invalid credentials, tenant membership behavior, password hashing, federated provider selection, provider-wrapper behavior, provider mismatch and identity-not-linked behavior, cancellation, Google/Microsoft/Apple credential validation, OIDC/JWKS failures, malformed Base64Url and token claim/signature validation.
 
-They cover:
+### Integration Tests
 
-- local authentication request validation;
-- email normalization;
-- password verification;
-- invalid credentials;
-- tenant membership handling;
-- password hashing;
-- federated provider selection;
-- provider-wrapper behavior;
-- federated identity lookup rules;
-- provider mismatch handling;
-- cancellation and exception propagation;
-- provider-specific token-validation contracts.
+Authentication persistence is validated independently against SQL Server, PostgreSQL and MySQL using the real `KUKULCAN.SharedKernel.Database` infrastructure.
 
-## Integration Tests
+The suites validate user persistence, tenant memberships, federated identities, unique constraints, foreign keys, cascade deletion, tenant query filters, complete membership retrieval, active tenant access, active tenant switching, email canonicalization, sync/async persistence, cancellation and local/federated end-to-end behavior.
 
-Authentication persistence is validated independently against:
+## Current Test Matrix
 
-- SQL Server;
-- PostgreSQL;
-- MySQL.
+| Test project | Executed | Passed | Status |
+|---|---:|---:|---|
+| UnitTests | 129 | 129 | GREEN |
+| PostgreSQL Integration | 41 | 41 | GREEN |
+| SQL Server Integration | 41 | 41 | GREEN |
+| MySQL Integration | 41 | 41 | GREEN |
+| **Total** | **252** | **252** | **GREEN** |
 
-The integration suites use the real **KUKULCAN.SharedKernel.Database** infrastructure rather than replacing persistence with a parallel test abstraction.
-
-They audit:
-
-- user persistence;
-- tenant membership persistence;
-- federated identity persistence;
-- unique constraints;
-- foreign keys;
-- cascade deletion;
-- tenant query filters;
-- retrieval of all tenant memberships by the authentication stores;
-- cancellation behavior;
-- local authentication end-to-end behavior.
-
-## Federated Authentication Audit
-
-Google, Microsoft and Apple are tested independently.
-
-The test contract validates:
-
-- trusted JWT signatures;
-- issuer validation;
-- audience validation;
-- expiration validation;
-- required subject claims;
-- Google subject mapping through `sub`;
-- Apple subject mapping through `sub`;
-- Microsoft subject mapping through `tid:oid`.
-
-Provider tests use controlled cryptographic material and deterministic HTTP responses for JWKS/OIDC metadata. The purpose is to test validation behavior without depending on live Google, Microsoft or Apple services.
+No functional test gap is currently justified solely by the existing authentication contract.
 
 ## Multi-Tenant Audit
 
-Multi-tenancy is audited at both unit and persistence levels.
-
 The tests verify that:
 
-1. authentication returns all tenant memberships belonging to the authenticated user;
-2. users cannot inherit another user's memberships;
-3. normal persistence queries respect the active tenant filter;
-4. authentication stores can deliberately bypass the active tenant query filter when they must reconstruct the complete membership set;
-5. tenant membership changes are persisted correctly.
+1. successful authentication returns all tenant memberships;
+2. `Auth.NoTenantAccess` is returned when there is no active-tenant membership;
+3. users cannot inherit another user's memberships;
+4. normal persistence queries respect the active tenant filter;
+5. authentication stores can bypass the filter when reconstructing complete memberships;
+6. active tenant switching does not leave stale state;
+7. membership changes persist correctly.
 
-This distinction is important because the active `ITenantContext` represents the tenant context of persistence operations, while authentication must be able to establish the complete set of memberships for a user.
+## AuthDbContext Audit
 
-## Coverage Audit Method
+`AuthDbContext` overrides four relevant methods:
 
-Coverage should be generated from the complete solution test run using the repository's .NET test and coverage tooling.
+1. `SaveChanges(bool acceptAllChangesOnSuccess)`;
+2. `SaveChanges()`;
+3. `SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken)`;
+4. `SaveChangesAsync(CancellationToken)`.
 
-The audit should consider at least:
+Custom logic processes Added and Modified `AuthUserEntity` entries:
 
-- line coverage;
-- branch coverage;
-- method coverage;
-- uncovered branches in security-sensitive code;
-- uncovered exception paths;
-- provider-specific behavior;
-- database-provider-specific behavior.
+```
+Email = Email.Trim().ToLowerInvariant()
+```
 
-A high line-coverage percentage is not sufficient when important branches remain untested.
+The integration suites cover added-user canonicalization through `SaveChanges()`, added-user canonicalization through `SaveChangesAsync()`, modified-user canonicalization and real database round-trips.
 
-## What Must Not Be Done
+The three providers execute this contract independently.
 
-Do not add artificial tests solely to increase coverage.
+`SaveChanges(false)` and cancellation are not additional authentication behaviors: the boolean overload delegates to EF Core after the same custom canonicalization, and cancellation is passed through to EF Core/provider execution. No artificial tests are required for those inherited semantics.
 
-Examples of tests that should be avoided:
+## Federated Provider Audit
 
-- tests that only execute a property getter without behavioral value;
-- duplicated tests with no additional contract;
-- tests whose only purpose is to satisfy a coverage threshold;
-- tests that mock away the persistence behavior they are intended to verify;
-- live external-provider calls that make the test suite non-deterministic.
+Google, Microsoft and Apple validators cover valid credentials, required claims, issuer, audience, lifetime, signatures, supported algorithms, OIDC configuration, JWKS discovery, empty/unusable signing keys, HTTP metadata failures, malformed Base64Url and cancellation.
+
+| Provider | Stable subject |
+|---|---|
+| Google | `sub` |
+| Microsoft | `tid:oid` |
+| Apple | `sub` |
+
+## Deterministic Provider Testing
+
+Validator tests use generated RSA keys, controlled JWT claims, deterministic OIDC metadata, deterministic JWKS payloads, custom HTTP handlers, controlled HTTP failures and controlled cancellation.
+
+They do not call live identity-provider services.
 
 ## TDD Relationship
 
-The authentication project follows a test-first development model.
+The repository follows:
 
-A test may intentionally be RED when it specifies behavior that has not yet been implemented. Such a test is part of the executable contract and should not be removed merely because it temporarily lowers runtime coverage.
-
-The expected lifecycle is:
-
-```text
-Test specification
-      ↓
-RED
-      ↓
-Minimal implementation
-      ↓
-GREEN
-      ↓
-Refactor
-      ↓
-Coverage audit
+```
+TEST → RED → Source → GREEN → Coverage → PR → merge
 ```
 
-## Provider Matrix
+A RED test is meaningful only when it specifies behavior missing from production code. If production code already satisfies a newly formalized behavior, the test may be immediately GREEN. Production code must not be changed to manufacture RED.
 
-| Area | Unit | SQL Server | PostgreSQL | MySQL |
-|---|---:|---:|---:|---:|
-| Local authentication | ✓ | ✓ | ✓ | ✓ |
-| Google persistence/integration specification | ✓ | ✓ | ✓ | ✓ |
-| Microsoft persistence/integration specification | ✓ | ✓ | ✓ | ✓ |
-| Apple persistence/integration specification | ✓ | ✓ | ✓ | ✓ |
-| Provider validator specification | ✓ | ✓* | ✓* | ✓* |
-| Multi-tenant behavior | ✓ | ✓ | ✓ | ✓ |
+## Coverage Method
 
-* The database-side federated end-to-end tests are present as specifications and depend on the provider credential validators being implemented.
+`.github/workflows/coverage.yml` uses Cobertura and restores/builds the solution, runs UnitTests plus PostgreSQL, SQL Server and MySQL integration tests with coverage, and publishes one Cobertura artifact per test project.
 
-## Interpreting Results
+Production coverage includes only `KUKULCAN.SharedKernel.Auth` and excludes all test assemblies and compiler-generated code.
 
-Coverage reports should always be interpreted together with the test matrix.
+## Coverage Interpretation
 
-A missing line in a trivial accessor is less significant than an uncovered branch that controls:
+Coverage must be interpreted by behavior, not percentage alone. Priority is given to branches controlling credential acceptance, signature validation, issuer/audience validation, provider identity mapping, tenant membership exposure, active tenant access and persistence integrity.
 
-- credential acceptance;
-- token signature validation;
-- issuer or audience validation;
-- tenant membership exposure;
-- provider identity mapping;
-- authorization-relevant persistence behavior.
+## What Must Not Be Done
 
-The audit therefore combines quantitative coverage with qualitative review of security-sensitive and tenant-sensitive paths.
+Do not add tests solely to increase coverage. Avoid duplicate tests without additional contract, trivial accessor-only tests, fabricated invalid states solely for defensive branches, mocks replacing real persistence in integration tests, live external-provider calls and arbitrary global coverage thresholds.
 
-## Reporting
+## Project File Audit
 
-Coverage reports should be generated from the same source revision used for the test run and retained with the corresponding development or release evidence.
+The four test projects rely on implicit SDK compilation.
 
-When coverage changes materially, this document should be updated if the test architecture or audit methodology changes.
+No `<Compile Remove>` or `<Compile Update>` entries are present in:
 
-The audit must distinguish between:
+- `KUKULCAN.SharedKernel.Auth.UnitTests.csproj`;
+- `KUKULCAN.SharedKernel.Auth.SQLServer.Integration.csproj`;
+- `KUKULCAN.SharedKernel.Auth.PostgreSQL.Integration.csproj`;
+- `KUKULCAN.SharedKernel.Auth.MySQL.Integration.csproj`.
 
-- tests that are GREEN and validate implemented behavior;
-- test-first specifications that are intentionally RED;
-- provider-specific integration tests;
-- persistence behavior executed against real database engines.
+The former API test exclusion was removed together with the obsolete API test because this repository is a class library.
 
-This prevents a coverage report from implying that unimplemented authentication behavior has already been validated.
+There are currently no `.cs` test files intentionally excluded from compilation.
+
+## Coverage Conclusion
+
+The current audit concludes that the authentication behavior is fully covered according to the defined contract.
+
+Future tests should be introduced only when a new authentication behavior, security requirement, persistence rule or regression requires them.

@@ -1,60 +1,75 @@
 # Changelog
 
-All notable changes to **KUKULCAN.SharedKernel.Auth** are documented in this file.
+All notable changes to **KUKULCAN.SharedKernel.Auth** are documented here.
 
-The project follows the principles of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/).
+The project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
+
+The current `main` branch contains the completed authentication behavior and its corresponding GREEN test suite.
 
 ### Added
 
 #### Local Authentication
 
-- Local authentication request and result contracts.
-- Password hashing and verification using ASP.NET Core Identity password hashing.
-- Local user store backed by `KUKULCAN.SharedKernel.Database`.
-- User and tenant-membership persistence.
-- Multi-tenant authentication results containing all memberships.
-- Tenant-aware integration tests for SQL Server, PostgreSQL and MySQL.
-- Tests for unique email persistence constraints.
-- Tests for foreign-key integrity and cascading user deletion.
-- Tests distinguishing normal tenant-filtered persistence queries from authentication lookups that must retrieve all memberships.
-- End-to-end local authentication integration tests for SQL Server, PostgreSQL and MySQL.
+- Local authentication request/result contracts.
+- Password hashing and verification.
+- Local user and tenant-membership persistence.
+- Active-tenant access enforcement through `Auth.NoTenantAccess`.
+- Preservation of all tenant memberships in successful results.
+- Active tenant switching coverage.
+- Email canonicalization for persisted users.
+- Foreign-key and cascade-delete behavior.
 
 #### Federated Authentication
 
-- Federated authentication request and identity contracts.
-- Federated authentication service.
+- Federated authentication contracts and service.
 - Google, Microsoft and Apple provider wrappers.
-- Federated identity persistence using `(Provider, Subject)`.
-- Google and Apple stable subject mapping through `sub`.
-- Microsoft stable subject mapping through `tid:oid`.
-- Federated persistence integration tests for SQL Server, PostgreSQL and MySQL.
-- Federated authentication integration specifications covering Google, Microsoft and Apple across all three database providers.
-- Provider-specific validator test specifications for Google, Microsoft and Apple.
-- Controlled JWT/JWKS test scenarios designed to avoid live provider calls.
+- Federated identity persistence.
+- Google and Apple subject mapping through `sub`.
+- Microsoft subject mapping through `tid:oid`.
+- Provider-specific OIDC/JWKS/JWT credential validation.
+- Normalization of invalid credential infrastructure failures to `Auth.FederatedCredentialInvalid`.
+- Explicit cancellation propagation.
 
 #### Testing
 
-- NUnit unit-test project.
-- Independent SQL Server, PostgreSQL and MySQL integration-test projects.
-- Unit tests for local authentication, password hashing and federated authentication.
-- Integration tests for persistence, tenant behavior, cancellation and federated identity constraints.
+- NUnit unit tests.
+- Independent SQL Server, PostgreSQL and MySQL integration suites.
+- Behavior-first TDD coverage.
+- Deterministic provider validator tests.
+- Real database round-trip persistence tests.
+- Multi-tenant isolation and active-tenant boundary tests.
 - Coverage-audit documentation.
 
 ### Changed
 
-- Authentication persistence is explicitly built on `KUKULCAN.SharedKernel.Database`.
-- Authentication reuses `KUKULCAN.SharedKernel` result and error contracts.
-- Federated identity handling is based on stable provider identifiers rather than email addresses.
-- Authentication preserves complete tenant membership information.
+- Authentication persistence uses `KUKULCAN.SharedKernel.Database`.
+- Shared results/errors are reused from `KUKULCAN.SharedKernel`.
+- Federated identities use stable provider subjects rather than email addresses.
+- `AuthDbContext` canonicalizes added and modified emails using `Trim().ToLowerInvariant()`.
+- The project is explicitly a .NET 10 class library and does not host an ASP.NET Core API.
 
 ### Security
 
-- Password hashes are kept inside persistence models and are not exposed in authenticated-user results.
-- Federated identity contracts require provider-specific stable identifiers.
-- Provider validator tests specify rejection of invalid issuer, audience, expiry, required claims and signatures.
+- Password hashes are never returned in authentication results.
+- JWT signature, issuer, audience and lifetime validation are enforced.
+- Stable provider identifiers are used for federated identity persistence.
+- Tenant membership exposure is controlled by the active-tenant boundary.
+- Cancellation is not converted into authentication success or generic credential failure.
+
+### Validation Status
+
+| Suite | Result |
+|---|---:|
+| UnitTests | 129 / 129 |
+| PostgreSQL Integration | 41 / 41 |
+| SQL Server Integration | 41 / 41 |
+| MySQL Integration | 41 / 41 |
+| **Total** | **252 / 252** |
+
+No artificial tests are maintained solely to increase coverage.
 
 ## Release Notes
 
-No stable public release version is declared in this changelog yet. Versioned release entries will be added when releases are published.
+No stable public release version is declared in this changelog yet.
