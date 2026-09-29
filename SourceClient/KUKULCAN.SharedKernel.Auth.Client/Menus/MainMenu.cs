@@ -36,6 +36,15 @@ public static class MainMenu
                 case "1":
                     await LocalAuthenticationMenu.RunAsync(configuration);
                     break;
+                case "2":
+                    await FederatedAuthenticationMenu.RunAsync(configuration, "Google");
+                    break;
+                case "3":
+                    await FederatedAuthenticationMenu.RunAsync(configuration, "Microsoft");
+                    break;
+                case "4":
+                    await FederatedAuthenticationMenu.RunAsync(configuration, "Apple");
+                    break;
                 case "5":
                     await DatabaseConfigurationMenu.RunAsync(
                         DatabaseEnvironmentConfiguration.Load());
