@@ -79,13 +79,148 @@ public sealed class GoogleCredentialValidatorTests
         result.IsFailure.Should().BeTrue();
     }
 
+    [Test]
+    public async Task ValidateAsync_WhenOidcRequestFails_ReturnsInvalidFederatedCredential()
+    {
+        using var client = CreateFailingClient();
+        var result = await new GoogleCredentialValidator(ClientId, client)
+            .ValidateAsync("credential");
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Code.Should().Be("Auth.FederatedCredentialInvalid");
+    }
+
+    [Test]
+    public async Task ValidateAsync_WhenJwksRequestFails_ReturnsInvalidFederatedCredential()
+    {
+        using var client = CreateClient(
+            request => request.RequestUri?.AbsoluteUri.Contains("openid-configuration", StringComparison.OrdinalIgnoreCase) == true
+                ? Json(new { issuer = Issuer, jwks_uri = "https://www.googleapis.com/oauth2/v3/certs" })
+                : new HttpResponseMessage(HttpStatusCode.InternalServerError));
+
+        var result = await new GoogleCredentialValidator(ClientId, client)
+            .ValidateAsync("credential");
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Code.Should().Be("Auth.FederatedCredentialInvalid");
+    }
+
+    [Test]
+    public async Task ValidateAsync_WhenOidcConfigurationIsInvalid_ReturnsInvalidFederatedCredential()
+    {
+        using var client = CreateClient(
+            _ => Json(new { issuer = "", jwks_uri = "" }));
+
+        var result = await new GoogleCredentialValidator(ClientId, client)
+            .ValidateAsync("credential");
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Code.Should().Be("Auth.FederatedCredentialInvalid");
+    }
+
+    [Test]
+    public async Task ValidateAsync_WhenJwksIsEmpty_ReturnsInvalidFederatedCredential()
+    {
+        using var client = CreateClient(
+            request => request.RequestUri?.AbsoluteUri.Contains("openid-configuration", StringComparison.OrdinalIgnoreCase) == true
+                ? Json(new { issuer = Issuer, jwks_uri = "https://www.googleapis.com/oauth2/v3/certs" })
+                : Json(new { keys = Array.Empty<object>() }));
+
+        var result = await new GoogleCredentialValidator(ClientId, client)
+            .ValidateAsync("credential");
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Code.Should().Be("Auth.FederatedCredentialInvalid");
+    }
+
+    [Test]
+    public async Task ValidateAsync_WhenJwksContainsNoUsableKeys_ReturnsInvalidFederatedCredential()
+    {
+        using var client = CreateClient(
+            request => request.RequestUri?.AbsoluteUri.Contains("openid-configuration", StringComparison.OrdinalIgnoreCase) == true
+                ? Json(new { issuer = Issuer, jwks_uri = "https://www.googleapis.com/oauth2/v3/certs" })
+                : Json(new
+                {
+                    keys = new[]
+                    {
+                        new
+                        {
+                            kty = "EC",
+                            use = "sig",
+                            alg = "ES256",
+                            kid = "google-key",
+                            n = "unused",
+                            e = "unused"
+                        }
+                    }
+                }));
+
+        var result = await new GoogleCredentialValidator(ClientId, client)
+            .ValidateAsync("credential");
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Code.Should().Be("Auth.FederatedCredentialInvalid");
+    }
+
+    [Test]
+    public async Task ValidateAsync_WhenJwksContainsMalformedBase64Url_ReturnsInvalidFederatedCredential()
+    {
+        using var client = CreateClient(
+            request => request.RequestUri?.AbsoluteUri.Contains("openid-configuration", StringComparison.OrdinalIgnoreCase) == true
+                ? Json(new { issuer = Issuer, jwks_uri = "https://www.googleapis.com/oauth2/v3/certs" })
+                : Json(new
+                {
+                    keys = new[]
+                    {
+                        new
+                        {
+                            kty = "RSA",
+                            use = "sig",
+                            alg = "RS256",
+                            kid = "google-key",
+                            n = "A",
+                            e = "AQAB"
+                        }
+                    }
+                }));
+
+        var result = await new GoogleCredentialValidator(ClientId, client)
+            .ValidateAsync("credential");
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Code.Should().Be("Auth.FederatedCredentialInvalid");
+    }
+
+    [Test]
+    public async Task ValidateAsync_WhenCancelled_PropagatesCancellation()
+    {
+        using var client = CreateClient(
+            _ => throw new OperationCanceledException());
+
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+
+        var act = () => new GoogleCredentialValidator(ClientId, client)
+            .ValidateAsync("credential", cancellation.Token);
+
+        await act.Should().ThrowAsync<OperationCanceledException>();
+    }
+
     private static HttpClient CreateClient(RSA key, string issuer)
     {
-        return new HttpClient(new StubHandler(request =>
+        return CreateClient(request =>
         {
-            return request.RequestUri?.AbsoluteUri.Contains("openid-configuration", StringComparison.OrdinalIgnoreCase) == true ? Json(new { issuer, jwks_uri = "https://www.googleapis.com/oauth2/v3/certs" }) : Json(new { keys = new[] { Jwk(key, "google-key") } });
-        }));
+            return request.RequestUri?.AbsoluteUri.Contains("openid-configuration", StringComparison.OrdinalIgnoreCase) == true
+                ? Json(new { issuer, jwks_uri = "https://www.googleapis.com/oauth2/v3/certs" })
+                : Json(new { keys = new[] { Jwk(key, "google-key") } });
+        });
     }
+
+    private static HttpClient CreateFailingClient() =>
+        CreateClient(_ => new HttpResponseMessage(HttpStatusCode.InternalServerError));
+
+    private static HttpClient CreateClient(Func<HttpRequestMessage, HttpResponseMessage> handler) =>
+        new(new StubHandler(handler));
 
     private static object Jwk(RSA key, string kid)
     {
@@ -108,11 +243,16 @@ public sealed class GoogleCredentialValidatorTests
         Convert.ToBase64String(value).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
     private static HttpResponseMessage Json(object value) =>
-        new(HttpStatusCode.OK) { Content = new StringContent(JsonSerializer.Serialize(value), Encoding.UTF8, "application/json") };
+        new(HttpStatusCode.OK)
+        {
+            Content = new StringContent(JsonSerializer.Serialize(value), Encoding.UTF8, "application/json")
+        };
 
     private sealed class StubHandler(Func<HttpRequestMessage, HttpResponseMessage> handler) : HttpMessageHandler
     {
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken) =>
             Task.FromResult(handler(request));
     }
 }
