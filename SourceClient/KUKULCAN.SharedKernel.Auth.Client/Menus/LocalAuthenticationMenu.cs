@@ -1,5 +1,6 @@
 using KUKULCAN.SharedKernel.Auth.Authentication.Local;
 using KUKULCAN.SharedKernel.Auth.Client.Authentication;
+using KUKULCAN.SharedKernel.Auth.Client.Configuration;
 
 namespace KUKULCAN.SharedKernel.Auth.Client.Menus;
 
