@@ -70,7 +70,7 @@ public static class FederatedAuthenticationMenu
             {
                 Console.WriteLine("Authentication: FAILURE");
                 Console.WriteLine($"Code: {result.Error.Code}");
-                Console.WriteLine($"Message: {result.Error.Message}");
+                Console.WriteLine($"Message: {result.Error.ToString()}");
             }
         }
         catch (OperationCanceledException)
