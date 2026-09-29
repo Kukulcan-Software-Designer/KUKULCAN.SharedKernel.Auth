@@ -1,126 +1,112 @@
 # Contributing to KUKULCAN.SharedKernel.Auth
 
-Thank you for contributing to **KUKULCAN.SharedKernel.Auth**.
-
-The project provides reusable authentication infrastructure for the KUKULCAN ecosystem. Contributions must preserve security, multi-tenant correctness, architectural consistency and a small, maintainable public API.
+Contributions must preserve authentication correctness, security, multi-tenant isolation and the architectural boundaries of the KUKULCAN shared libraries.
 
 ## Before Contributing
 
-Before opening an Issue or Pull Request:
-
-- Read the README and project documentation.
-- Search existing Issues, Discussions and Pull Requests.
-- Verify that the behavior is not already provided by `KUKULCAN.SharedKernel` or `KUKULCAN.SharedKernel.Database`.
+- Read the repository documentation.
+- Search existing Issues and Pull Requests.
+- Verify that the behavior does not already belong to `KUKULCAN.SharedKernel` or `KUKULCAN.SharedKernel.Database`.
 - Confirm that the proposed change belongs in the authentication boundary.
+- Identify the executable behavior that the change establishes.
 
 ## Architecture
 
-The project targets **.NET 10** and is organized around:
+The project targets **.NET 10** and uses:
 
-- `Source/` for production code.
-- `Tests/` for automated tests.
-- `Documentation/` for project documentation.
+- `Source/` for production code;
+- `Tests/` for automated tests;
+- repository-level Markdown files for governance and documentation.
 
-Authentication persistence must use **KUKULCAN.SharedKernel.Database**. Do not introduce a parallel persistence infrastructure when an existing shared abstraction is applicable.
+The production project is a class library. Do not introduce `Program.cs`, controllers, minimal APIs or an ASP.NET Core host into `Source/KUKULCAN.SharedKernel.Auth`.
 
-The project must reuse contracts from **KUKULCAN.SharedKernel** instead of duplicating existing shared concepts.
+Authentication persistence must use `KUKULCAN.SharedKernel.Database`. Do not introduce parallel persistence infrastructure.
+
+## TDD Contract
+
+```
+TEST → RED → Source → GREEN → Coverage → PR → merge
+```
+
+1. Define the behavior with a test.
+2. Confirm RED when the behavior is not implemented.
+3. Implement the minimum production change.
+4. Confirm GREEN.
+5. Run the relevant coverage audit.
+6. Open a Pull Request with validation evidence.
+7. Merge only after required CI is GREEN.
+
+A test that is already GREEN is valid when it documents an existing contract. Do not change production code merely to manufacture RED.
+
+Do not add tests solely to increase coverage percentages.
+
+## Branches
+
+Feature/behavior branches normally start directly from `Develop`.
+
+Use `FEATURES/<BEHAVIOR>`. Documentation-only work may use `DOCS/<NAME>`.
+
+## Testing
+
+The repository contains:
+
+- `KUKULCAN.SharedKernel.Auth.UnitTests`;
+- `KUKULCAN.SharedKernel.Auth.SQLServer.Integration`;
+- `KUKULCAN.SharedKernel.Auth.PostgreSQL.Integration`;
+- `KUKULCAN.SharedKernel.Auth.MySQL.Integration`.
+
+Unit tests validate deterministic behavior. Integration tests exercise real database behavior and must not mock away the persistence contract being tested.
 
 ## Multi-Tenancy
 
-Multi-tenancy is part of the authentication contract.
+Authentication must enforce the active tenant boundary, preserve all memberships in successful results, prevent cross-user membership exposure and distinguish persistence filtering from authentication membership reconstruction.
 
-Authentication results must preserve **all KUKULCAN tenant memberships** associated with the authenticated user. An implementation must not reduce a user's memberships to the currently active tenant.
-
-The persistence-level tenant context is not a substitute for the complete membership set required during authentication.
-
-## Testing and TDD
-
-Tests are the executable specification for authentication behavior.
-
-The preferred development sequence is:
-
-1. Define the required behavior with tests.
-2. Implement the minimum production code required by those tests.
-3. Run the relevant test suite.
-4. Refactor without changing the contract.
-5. Repeat for the next behavior.
-
-Do not add tests merely to increase a coverage percentage. Tests must represent real behavior, persistence rules or security requirements.
-
-### Test projects
-
-The repository contains independent NUnit test projects for:
-
-- Unit tests.
-- SQL Server integration.
-- PostgreSQL integration.
-- MySQL integration.
-
-Provider-backed tests should exercise real database behavior rather than replacing persistence with mocks.
+Changes affecting tenant behavior require explicit behavior tests.
 
 ## Federated Authentication
 
-Google, Microsoft and Apple integrations must validate provider credentials securely.
+Supported providers are Google, Microsoft and Apple.
 
-Stable external identities are used for persistence:
+| Provider | Stable subject |
+|---|---|
+| Google | `sub` |
+| Microsoft | `tid:oid` |
+| Apple | `sub` |
 
-- Google: `sub`.
-- Microsoft: `tid:oid`.
-- Apple: `sub`.
-
-Email addresses must not replace the provider's stable identity identifier.
-
-Provider validation should be deterministic in tests and should not require live calls to external identity providers.
+Provider tests must remain deterministic and must not call live identity-provider services.
 
 ## Public API
 
-Keep the public API minimal.
+Keep the public API minimal. Before introducing a public abstraction:
 
-Before introducing a new public abstraction:
-
-- verify that an existing SharedKernel contract cannot be reused;
+- verify that an existing shared contract cannot be reused;
 - document the architectural reason;
-- add appropriate tests;
-- consider backward compatibility.
+- add behavior tests;
+- consider compatibility and security;
+- add XML documentation.
 
-All public APIs should include XML documentation.
+Public API documentation is enforced by the build.
 
 ## Coding Standards
 
-Follow the repository's existing C# conventions:
+Follow the existing conventions:
 
-- .NET 10.
-- Nullable reference types enabled.
-- Implicit usings enabled.
-- Latest supported C# language version.
-- Warnings treated as errors.
-- File-scoped namespaces.
-- Immutable records and read-only collections where appropriate.
-
-## Security
-
-Authentication code is security-sensitive.
-
-Contributions must consider:
-
-- credential validation;
-- token signature, issuer, audience and lifetime validation;
-- stable provider identities;
-- tenant isolation;
-- secret and credential handling;
-- information disclosure.
-
-Security vulnerabilities must be reported privately according to [SECURITY.md](SECURITY.md).
+- .NET 10;
+- nullable reference types;
+- implicit usings;
+- latest supported C# language version;
+- warnings treated as errors;
+- XML documentation;
+- file-scoped namespaces;
+- immutable/read-only models where appropriate;
+- explicit cancellation-token propagation.
 
 ## Pull Requests
 
-A Pull Request should explain:
+Pull Requests should address one coherent concern, use an English title and description, explain behavior and architectural impact, list tests, identify affected providers, describe security/tenant implications and report validation results.
 
-- the problem being solved;
-- the architectural impact;
-- the tests added or updated;
-- the database providers affected;
-- security or tenant-isolation implications;
-- any compatibility considerations.
+## Security
 
-A contribution should build without warnings and should leave the relevant test suites passing unless the Pull Request explicitly represents a test-first specification that is intentionally RED.
+Do not commit passwords, tokens, client secrets, signing keys or private keys.
+
+Security vulnerabilities must be reported privately according to [SECURITY.md](SECURITY.md).
