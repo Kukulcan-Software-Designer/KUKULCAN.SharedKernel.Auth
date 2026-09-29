@@ -27,6 +27,11 @@ public sealed class GoogleCredentialValidator : IFederatedCredentialValidator
         MapInboundClaims = false
     };
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GoogleCredentialValidator"/> class.
+    /// </summary>
+    /// <param name="clientId">The Google OAuth client identifier accepted as the token audience.</param>
+    /// <param name="httpClient">The HTTP client used to retrieve OpenID Connect metadata and signing keys.</param>
     public GoogleCredentialValidator(string clientId, HttpClient httpClient)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(clientId);
@@ -36,6 +41,12 @@ public sealed class GoogleCredentialValidator : IFederatedCredentialValidator
         _httpClient = httpClient;
     }
 
+    /// <summary>
+    /// Validates a Google federated credential and returns its federated identity when valid.
+    /// </summary>
+    /// <param name="credential">The Google OpenID Connect credential to validate.</param>
+    /// <param name="cancellationToken">The token used to cancel metadata retrieval and validation.</param>
+    /// <returns>A successful result containing the federated identity, or a failure result when the credential or its supporting metadata is invalid.</returns>
     public async Task<Result<FederatedIdentity>> ValidateAsync(
         string credential,
         CancellationToken cancellationToken = default)
