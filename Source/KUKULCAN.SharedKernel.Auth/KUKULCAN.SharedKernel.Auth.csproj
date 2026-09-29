@@ -9,8 +9,7 @@
       <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
       <RootNamespace>KUKULCAN.SharedKernel.Auth</RootNamespace>
       <AssemblyName>KUKULCAN.SharedKernel.Auth</AssemblyName>
-      <SolutionDir>$(MSBuildThisFileDirectory)</SolutionDir>
-      <BaseOutputPath>$(SolutionDir)Bin\$(MSBuildProjectName)\</BaseOutputPath>
+      <BaseOutputPath>$(MSBuildThisFileDirectory)..\..\Bin\$(MSBuildProjectName)\</BaseOutputPath>
       <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
