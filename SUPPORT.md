@@ -4,15 +4,9 @@
 
 ## Before Asking for Help
 
-Please check:
+Review [README.md](README.md), [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), [CHANGELOG.md](CHANGELOG.md), [ROADMAP.md](ROADMAP.md), [TESTS-Auditoria-Coverage.md](TESTS-Auditoria-Coverage.md) and existing Issues/Discussions.
 
-- `README.md`.
-- `CONTRIBUTING.md`.
-- `SECURITY.md`.
-- `CHANGELOG.md`.
-- Existing GitHub Issues and Discussions.
-
-Also verify that you are using a current supported version.
+Verify that the problem is reproducible on a supported .NET 10 environment.
 
 ## Reporting Bugs
 
@@ -20,51 +14,33 @@ Use GitHub Issues for reproducible defects that are not security vulnerabilities
 
 Include, when applicable:
 
-- package or repository version;
-- .NET version;
+- repository commit or package version;
+- .NET SDK version;
 - operating system;
-- database provider and version;
-- complete exception message;
-- stack trace;
-- expected behavior;
-- actual behavior;
+- database provider/version;
+- complete exception and stack trace;
+- expected and actual behavior;
 - minimal reproduction.
 
-For authentication problems, also describe the authentication mode involved: local, Google, Microsoft or Apple.
+Identify the authentication mode: local, Google, Microsoft or Apple.
 
-Do not include passwords, tokens, client secrets, private keys or other credentials in an issue.
+Never include passwords, tokens, client secrets, private keys or connection-string credentials.
 
 ## Architectural Questions
 
-Use GitHub Discussions for questions concerning:
-
-- local authentication;
-- federated authentication;
-- tenant membership behavior;
-- integration with `KUKULCAN.SharedKernel`;
-- integration with `KUKULCAN.SharedKernel.Database`;
-- database-provider integration;
-- testing strategy.
+Use GitHub Discussions for local/federated authentication, tenant membership behavior, credential validation, KUKULCAN.SharedKernel integration, KUKULCAN.SharedKernel.Database integration, SQL Server/PostgreSQL/MySQL integration, TDD/test architecture and API-host boundaries.
 
 ## Feature Requests
 
-Feature requests should explain:
+Explain the problem, desired behavior, why the current API is insufficient, why it belongs in the shared authentication component, and its security, multi-tenant and compatibility implications.
 
-- the problem;
-- why the current API is insufficient;
-- why the functionality belongs in the authentication shared component;
-- the proposed approach;
-- relevant security and multi-tenant implications.
+New behavior should normally be specified with an executable test before production implementation.
 
 ## Out of Scope
 
-This project does not provide general support for:
+This project does not provide general support for application-specific business rules, application-specific user-management workflows, database administration, unrelated ASP.NET Core configuration, third-party identity-provider account administration or general C#/.NET troubleshooting.
 
-- application-specific business rules;
-- database administration;
-- unrelated ASP.NET Core configuration;
-- third-party identity-provider account administration;
-- general C# or .NET troubleshooting.
+The library is not an HTTP API host.
 
 ## Security
 
