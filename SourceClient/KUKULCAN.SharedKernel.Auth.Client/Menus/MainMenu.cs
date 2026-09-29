@@ -33,6 +33,9 @@ public static class MainMenu
 
             switch (Console.ReadLine())
             {
+                case "1":
+                    await LocalAuthenticationMenu.RunAsync(configuration);
+                    break;
                 case "5":
                     await DatabaseConfigurationMenu.RunAsync(
                         DatabaseEnvironmentConfiguration.Load());
@@ -41,7 +44,7 @@ public static class MainMenu
                 case "0":
                     return;
                 default:
-                    Console.WriteLine("Authentication operation will be implemented next.");
+                    Console.WriteLine("Authentication operation not implemented yet.");
                     Console.WriteLine("Press Enter to continue...");
                     Console.ReadLine();
                     break;
