@@ -34,7 +34,4 @@
     <Project Path="Tests/KUKULCAN.SharedKernel.Auth.PostgreSQL.Integration/KUKULCAN.SharedKernel.Auth.PostgreSQL.Integration.csproj" />
     <Project Path="Tests/KUKULCAN.SharedKernel.Auth.MySQL.Integration/KUKULCAN.SharedKernel.Auth.MySQL.Integration.csproj" />
   </Folder>
-  <Folder Name="/Tests/Client/">
-    <Project Path="Tests/KUKULCAN.SharedKernel.Auth.Client.UnitTests/KUKULCAN.SharedKernel.Auth.Client.UnitTests.csproj" />
-  </Folder>
 </Solution>
