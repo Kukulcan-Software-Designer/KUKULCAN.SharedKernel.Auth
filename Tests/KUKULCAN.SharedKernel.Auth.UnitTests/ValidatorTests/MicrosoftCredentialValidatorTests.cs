@@ -15,6 +15,26 @@ public sealed class MicrosoftCredentialValidatorTests
     private const string Issuer = "https://login.microsoftonline.com/" + TenantId + "/v2.0";
     private const string ObjectId = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
 
+    [TestCase(null)]
+    [TestCase("")]
+    [TestCase("   ")]
+    public void Constructor_WithInvalidClientId_ThrowsArgumentException(string? clientId)
+    {
+        using var client = new HttpClient();
+
+        var act = () => new MicrosoftCredentialValidator(clientId!, client);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Test]
+    public void Constructor_WithNullHttpClient_ThrowsArgumentNullException()
+    {
+        var act = () => new MicrosoftCredentialValidator(ClientId, null!);
+
+        act.Should().Throw<ArgumentNullException>();
+    }
+
     [Test]
     public async Task ValidateAsync_WithValidToken_UsesTidAndOidAsSubject()
     {
