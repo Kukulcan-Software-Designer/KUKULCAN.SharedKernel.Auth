@@ -187,7 +187,7 @@ public sealed class MicrosoftCredentialValidatorTests
         var result = await new MicrosoftCredentialValidator(ClientId, client).ValidateAsync(token);
 
         result.IsFailure.Should().BeTrue();
-        result.Errors.Should().ContainSingle(error => error.Code == "Auth.FederatedCredentialInvalid");
+        result.Error.Code.Should().Be("Auth.FederatedCredentialInvalid");
     }
 
     [Test]
