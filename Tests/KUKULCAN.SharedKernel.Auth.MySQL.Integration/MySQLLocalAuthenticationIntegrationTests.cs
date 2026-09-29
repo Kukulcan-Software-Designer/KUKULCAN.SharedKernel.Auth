@@ -217,11 +217,11 @@ public sealed class MySQLLocalAuthenticationIntegrationTests
     }
 
     [Test]
-    public void UserEmail_IsCanonicalizedWhenPersistedUsingSyncSaveChanges()
+    public async Task UserEmail_IsCanonicalizedWhenPersistedUsingSyncSaveChanges()
     {
-        using var context = AuthDbContextFactory.CreateAsync(
+        await using var context = await AuthDbContextFactory.CreateAsync(
             MySQLAuthenticationDatabase.ConnectionString,
-            Guid.NewGuid()).GetAwaiter().GetResult();
+            Guid.NewGuid());
 
         context.Users.Add(new AuthUserEntity
         {
