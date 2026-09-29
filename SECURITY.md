@@ -1,87 +1,55 @@
 # Security Policy
 
-**KUKULCAN.SharedKernel.Auth** is security-sensitive infrastructure. Authentication, credential validation and tenant membership handling must be treated as security-critical behavior.
+**KUKULCAN.SharedKernel.Auth** is security-sensitive infrastructure. Authentication, credential validation and tenant membership handling are security-critical behavior.
 
 ## Supported Versions
 
-Only actively maintained releases receive security fixes.
-
-| Version                    | Support                 |
-|----------------------------|-------------------------|
-| Latest stable release      | Supported               |
-| Older unsupported releases | Not supported           |
-| Pre-release versions       | Evaluation/testing only |
-
-The exact support window may change with project releases.
+| Version | Support |
+|---|---|
+| Latest stable release | Supported |
+| Older unsupported releases | Not supported |
+| Pre-release versions | Evaluation/testing only |
 
 ## Reporting a Vulnerability
 
-Do **not** report security vulnerabilities through public GitHub Issues or Discussions.
+Do **not** report security vulnerabilities through public Issues or Discussions.
 
-Use GitHub Private Vulnerability Reporting when it is enabled for the repository. Otherwise, contact the project maintainers privately.
+Use GitHub Private Vulnerability Reporting when enabled. Otherwise, contact the project maintainers privately.
 
-The report should include:
+Include, when available, the affected version/commit, .NET version, operating system, database provider/version, description, reproduction steps, proof of concept, security impact and suggested mitigation.
 
-- affected version;
-- .NET version;
-- operating system;
-- detailed description;
-- reproduction steps;
-- proof of concept, when available;
-- security impact;
-- suggested mitigation, when available.
+Do not include real passwords, tokens, private keys or production credentials.
 
 ## Relevant Security Areas
 
-Reports are especially important when they affect:
-
-- authentication bypass;
-- credential or password verification;
-- JWT or identity-token validation;
-- signature validation;
-- issuer or audience validation;
-- token lifetime validation;
-- provider identity handling;
-- tenant isolation;
-- unauthorized tenant membership exposure;
-- sensitive credential disclosure;
-- insecure persistence behavior;
-- dependency vulnerabilities.
-
-## Responsible Disclosure
-
-Please:
-
-- keep the vulnerability confidential while it is investigated;
-- avoid public disclosure before a fix is available;
-- provide maintainers reasonable time to investigate and remediate the issue;
-- coordinate public disclosure when appropriate.
-
-## Security Response
-
-The maintainers will:
-
-1. Acknowledge the report.
-2. Reproduce and assess the issue.
-3. Identify affected versions and components.
-4. Develop and test a mitigation or fix.
-5. Release and document the correction when appropriate.
-
-Security fixes should include regression tests whenever feasible.
+Reports are especially important for authentication bypass, password verification, credential disclosure, JWT signature/issuer/audience/lifetime validation, provider identity mapping, OIDC/JWKS validation, signing-key handling, tenant isolation, unauthorized membership exposure, persistence constraints and vulnerable dependencies.
 
 ## Security Principles
 
-The project follows these principles:
+- Password hashes are never returned in authentication results.
+- Federated identities use stable provider identifiers, not email addresses.
+- Google and Apple use `sub`.
+- Microsoft uses `tid:oid`.
+- JWT validation checks security-relevant claims and signatures.
+- Invalid federated infrastructure input is normalized to `Auth.FederatedCredentialInvalid`.
+- Cancellation is not converted into successful authentication.
+- Complete memberships are preserved while active-tenant access is enforced.
+- Persistence uses the shared tenant-aware database infrastructure.
 
-- credentials are never returned as part of an authenticated-user result;
-- password hashes are not exposed by authentication responses;
-- stable external provider identifiers are used instead of email addresses as federated identity keys;
-- tenant memberships are handled explicitly;
-- provider token validation must verify the security-relevant token claims and signature;
-- persistence must preserve tenant isolation without preventing authentication from retrieving a user's complete membership set.
+## Secure Development
+
+Security-sensitive changes follow behavior-first TDD. Tests use deterministic cryptographic material and controlled HTTP responses and must not depend on live provider credentials.
+
+Coverage is an audit signal with particular attention to security-sensitive branches and exception paths.
 
 ## Dependencies
 
-Security-sensitive dependencies should be kept current and evaluated before introduction.
+Current dependencies include Entity Framework Core 10, Microsoft.Extensions.Identity.Core 10, System.IdentityModel.Tokens.Jwt 8.23.0, KUKULCAN.SharedKernel 1.0.0 and KUKULCAN.SharedKernel.Database 1.0.2.
 
-Do not add a dependency merely for convenience when an existing .NET or KUKULCAN abstraction is sufficient.
+Dependencies must be evaluated before introduction and kept current where supported.
+
+## Security Response
+
+Maintainers will acknowledge, reproduce and assess the report, identify affected components, develop and test a mitigation, and publish a correction and guidance when appropriate.
+
+Security fixes should include regression tests whenever feasible.

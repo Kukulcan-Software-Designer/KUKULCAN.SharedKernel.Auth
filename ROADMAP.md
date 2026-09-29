@@ -4,117 +4,101 @@
 
 This roadmap describes the intended evolution of **KUKULCAN.SharedKernel.Auth**. It communicates direction rather than fixed delivery dates.
 
-Architectural correctness, security, testability and backward compatibility take precedence over feature volume.
+Architectural correctness, security, testability and compatibility take precedence over feature volume.
 
 ## Current Status
 
-The repository contains the authentication domain contracts, local authentication implementation, persistence integration and the test specifications for federated provider validation.
+The authentication foundation is implemented and behavior-tested.
 
-The current authentication scope includes:
+Current scope includes local authentication, password hashing, multi-tenant authentication, active-tenant boundaries, complete membership reconstruction, Google/Microsoft/Apple federated authentication, OIDC/JWKS/JWT validation, federated identity persistence, SQL Server/PostgreSQL/MySQL integration, deterministic NUnit tests, TDD and coverage auditing.
 
-- local database authentication;
-- multi-tenant authentication results;
-- Google federated authentication contracts;
-- Microsoft federated authentication contracts;
-- Apple federated authentication contracts;
-- provider-specific persistence;
-- SQL Server, PostgreSQL and MySQL integration test suites;
-- NUnit unit and integration test specifications.
+The current `main` suite is GREEN: **252 / 252**.
 
-## Completed Foundation
+## Completed
 
 ### Local Authentication
 
-- Local credential validation.
-- Password hashing and verification.
-- User persistence.
-- Tenant membership persistence.
-- Retrieval of all tenant memberships during authentication.
-- Tenant-aware persistence behavior.
-- SQL Server integration.
-- PostgreSQL integration.
-- MySQL integration.
+- request validation;
+- email normalization;
+- password verification;
+- invalid credentials;
+- user and membership persistence;
+- active tenant boundary;
+- active tenant switching;
+- complete membership preservation;
+- user isolation;
+- cancellation.
 
-### Federated Identity Persistence
+### Persistence
 
-- Federated identity model.
-- Composite provider/subject identity key.
-- User association.
-- Tenant membership retrieval.
-- SQL Server, PostgreSQL and MySQL persistence tests.
+- `AuthDbContext` integration with `KUKULCAN.SharedKernel.Database`;
+- email canonicalization for added and modified users;
+- synchronous and asynchronous save paths;
+- foreign-key integrity;
+- federated identity uniqueness;
+- cascade deletion;
+- tenant query filters;
+- real SQL Server, PostgreSQL and MySQL round-trips.
 
-### Provider Contracts
+### Federated Authentication
 
-- Google provider contract.
-- Microsoft provider contract using `tid:oid` as the external subject.
-- Apple provider contract.
-- Federated authentication service and provider-wrapper tests.
+- provider resolution;
+- Google, Microsoft and Apple provider contracts;
+- stable subject mapping;
+- federated identity lookup;
+- provider mismatch and identity-not-linked handling;
+- active tenant boundary;
+- all-membership preservation;
+- cancellation propagation.
 
-## Next Development Stage
+### Credential Validators
 
-The next implementation stage is provider credential validation:
+Google, Microsoft and Apple validators cover valid credentials, required claims, issuer, audience, lifetime, signatures, supported algorithms, OIDC configuration, JWKS discovery, empty/unusable signing keys, HTTP metadata failures, malformed Base64Url and cancellation.
 
-1. Google credential validation.
-2. Microsoft credential validation.
-3. Apple credential validation.
+Invalid credential infrastructure failures are normalized to `Auth.FederatedCredentialInvalid`.
 
-The existing validator tests define the required validation behavior for:
+## Test and Coverage Status
 
-- trusted signatures;
-- issuer;
-- audience;
-- expiration;
-- required identity claims;
-- provider-specific subject mapping.
+The functional audit found no remaining test justified solely by the current authentication contract.
 
-## Future Authentication API
+| Project | Status |
+|---|---:|
+| UnitTests | 129 / 129 |
+| PostgreSQL Integration | 41 / 41 |
+| SQL Server Integration | 41 / 41 |
+| MySQL Integration | 41 / 41 |
+| **Total** | **252 / 252** |
 
-**KUKULCAN.SharedKernel.Auth is a class library and does not host an ASP.NET Core application.**
+The project does not add artificial tests to pursue a percentage target.
 
-The authentication API is an application-level HTTP boundary that consumes this library. The Web API host, routing, HTTP status mapping and public transport contract therefore belong to the consuming application or to a separate API host project.
+## Next Development Areas
 
-Future work includes:
+### Application/API Host Integration
 
-- HTTP authentication endpoints implemented outside the class library;
-- consistent mapping of authentication results to HTTP responses;
-- JWT issuance and validation at the application/API boundary;
-- API-level multi-tenant authentication responses;
-- documentation of the public HTTP contract.
+`KUKULCAN.SharedKernel.Auth` remains a class library. When an application requires HTTP authentication, the application or a separate host should own tests for endpoints, DTOs, HTTP status/error mapping, JWT issuance, tenant-context resolution and transport security.
 
-API tests must execute against a real ASP.NET Core host. They must not be placed in the library's unit-test project or introduce a `Program`/Web API host into `Source/KUKULCAN.SharedKernel.Auth`.
+The API host must not be introduced into `Source/KUKULCAN.SharedKernel.Auth`.
 
-The API layer should be implemented only after its executable HTTP contract has been defined by tests in the project that owns the API host.
+### Production Provider Configuration
 
-## Provider Integration
+Future operational documentation may standardize Google, Microsoft and Apple configuration, secure credential storage, provider metadata/key rotation and diagnostics that do not expose credentials or tokens.
 
-Future provider work may include:
+### Packaging and Release
 
-- production configuration for Google, Microsoft and Apple;
-- secure key discovery and rotation handling;
-- provider-specific configuration documentation;
-- operational diagnostics without exposing credentials or tokens.
-
-## Quality Goals
-
-Continue to maintain:
-
-- deterministic unit tests;
-- provider-specific integration tests;
-- real database integration coverage;
-- tenant-isolation tests;
-- security regression tests;
-- coverage auditing based on behavior rather than artificial coverage targets.
+When a formal public release is prepared, document package metadata, release/versioning policy, SourceLink/repository metadata, NuGet publication and compatibility policy.
 
 ## Architectural Boundaries
 
-The project should remain focused on authentication infrastructure.
+The project must not become a general authorization framework, application-specific user-management system, generic repository framework, replacement for `KUKULCAN.SharedKernel.Database`, general-purpose identity provider or ASP.NET Core application host.
 
-It should not become:
+New functionality should enter the shared component only when it is a genuine cross-application authentication requirement.
 
-- a general authorization framework;
-- an application-specific user-management system;
-- a generic repository framework;
-- a replacement for `KUKULCAN.SharedKernel.Database`;
-- a general-purpose identity provider.
+## Quality Goals
 
-New functionality should be promoted into the shared authentication component only when it represents a genuine cross-application requirement.
+Maintain deterministic unit tests, real provider-backed integration tests, tenant-isolation regression tests, security regression tests, explicit cancellation behavior, minimal public API, XML documentation and behavior-based coverage auditing.
+
+Future behavior changes continue to follow:
+
+```
+TEST → RED → Source → GREEN → Coverage → PR → merge
+```
