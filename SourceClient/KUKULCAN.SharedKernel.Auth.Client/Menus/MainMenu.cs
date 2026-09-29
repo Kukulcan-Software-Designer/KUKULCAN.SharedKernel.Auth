@@ -25,7 +25,8 @@ public static class MainMenu
             Console.WriteLine();
             Console.WriteLine("Other Operations");
             Console.WriteLine("----------------");
-            Console.WriteLine("5. Database Configuration");
+            Console.WriteLine("5. Auth Store and Credential Operations");
+            Console.WriteLine("6. Database Configuration");
             Console.WriteLine();
             Console.WriteLine("0. Exit");
             Console.WriteLine();
@@ -46,6 +47,9 @@ public static class MainMenu
                     await FederatedAuthenticationMenu.RunAsync(configuration, "Apple");
                     break;
                 case "5":
+                    await OtherOperationsMenu.RunAsync(configuration);
+                    break;
+                case "6":
                     await DatabaseConfigurationMenu.RunAsync(
                         DatabaseEnvironmentConfiguration.Load());
                     configuration = DatabaseEnvironmentConfiguration.Load();
@@ -53,7 +57,7 @@ public static class MainMenu
                 case "0":
                     return;
                 default:
-                    Console.WriteLine("Authentication operation not implemented yet.");
+                    Console.WriteLine("Invalid option.");
                     Console.WriteLine("Press Enter to continue...");
                     Console.ReadLine();
                     break;
