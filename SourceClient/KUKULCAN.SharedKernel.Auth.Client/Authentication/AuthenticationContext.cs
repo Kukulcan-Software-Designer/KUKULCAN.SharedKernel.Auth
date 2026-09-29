@@ -1,9 +1,9 @@
 using KUKULCAN.SharedKernel.Abstractions;
+using KUKULCAN.SharedKernel.Auth.Persistence;
 using KUKULCAN.SharedKernel.Database.Abstractions;
 using KUKULCAN.SharedKernel.Database.Configuration;
 using KUKULCAN.SharedKernel.DomainEvents.Abstractions;
 using Microsoft.Extensions.Options;
-using KUKULCAN.SharedKernel.Auth.Persistence;
 
 namespace KUKULCAN.SharedKernel.Auth.Client.Authentication;
 
@@ -36,7 +36,13 @@ public sealed class AuthenticationContext : IDisposable
 
     public AuthDbContext DbContext { get; }
 
-    public void SetActiveTenant(Guid tenantId) => _tenantContext.TenantId = tenantId;
+    public Guid ActiveTenantId => _tenantContext.TenantId;
+
+    public void SetActiveTenant(Guid tenantId)
+    {
+        _tenantContext.TenantId = tenantId;
+        DbContext.ChangeTracker.Clear();
+    }
 
     public void Dispose() => DbContext.Dispose();
 
