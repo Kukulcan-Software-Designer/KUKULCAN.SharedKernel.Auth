@@ -20,16 +20,3 @@ This directory contains the technical documentation for the authentication libra
 
 - [TESTING.md](TESTING.md) — unit and real-provider integration testing strategy.
 - [COVERAGE.md](COVERAGE.md) — coverage scope and interpretation.
-
-## Deliberately Not Duplicated
-
-The following Database documentation is not duplicated as a standalone Auth document because Auth does not own an independent implementation of these concerns:
-
-- [SOFT_DELETE.md](SOFT_DELETE.md)
-- [UNIT_OF_WORK.md](UNIT_OF_WORK.md)
-
-Soft delete and unit-of-work behavior are inherited from `KUKULCAN.SharedKernel.Database` and documented authoritatively there.
-
-## Documentation Rule
-
-Authentication-specific behavior belongs here. Shared persistence infrastructure remains documented in the Database repository.

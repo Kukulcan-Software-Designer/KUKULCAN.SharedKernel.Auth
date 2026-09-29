@@ -88,11 +88,11 @@ Common auditing, soft-delete, immutability, domain-event and unit-of-work infras
 
 Provider-specific stable subjects are persisted rather than using email as the external identity key:
 
-| Provider | Subject |
-|---|---|
-| Google | `sub` |
+| Provider  | Subject   |
+|-----------|-----------|
+| Google    | `sub`     |
 | Microsoft | `tid:oid` |
-| Apple | `sub` |
+| Apple     | `sub`     |
 
 Microsoft therefore keeps the external object identity tenant-qualified.
 

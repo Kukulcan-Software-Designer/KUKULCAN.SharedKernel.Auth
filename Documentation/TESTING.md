@@ -51,13 +51,13 @@ Authentication persistence depends on relational behavior. Running the same cont
 
 ## Multi-Tenant Matrix
 
-| Condition | Expected result |
-|---|---|
-| No memberships | `Auth.NoTenantAccess` |
-| Memberships but no active-tenant access | `Auth.NoTenantAccess` |
-| Active-tenant access | Success |
-| Successful authentication | All memberships returned |
-| Active tenant changes | Membership set remains complete |
+| Condition                               | Expected result                 |
+|-----------------------------------------|---------------------------------|
+| No memberships                          | `Auth.NoTenantAccess`           |
+| Memberships but no active-tenant access | `Auth.NoTenantAccess`           |
+| Active-tenant access                    | Success                         |
+| Successful authentication               | All memberships returned        |
+| Active tenant changes                   | Membership set remains complete |
 
 ## Federated Validation Matrix
 
