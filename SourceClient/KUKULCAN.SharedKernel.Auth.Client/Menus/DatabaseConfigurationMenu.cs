@@ -7,8 +7,9 @@ public static class DatabaseConfigurationMenu
     public static async Task<DatabaseEnvironmentConfiguration> RunAsync(
         DatabaseEnvironmentConfiguration current)
     {
-        while (!current.IsComplete)
+        while (true)
         {
+            Console.Clear();
             Console.WriteLine("==================================================");
             Console.WriteLine(" KUKULCAN.SharedKernel.Auth Client");
             Console.WriteLine("==================================================");
@@ -17,34 +18,54 @@ public static class DatabaseConfigurationMenu
             Console.WriteLine($"AUTH_DB_CONNECTION_STRING: {(string.IsNullOrWhiteSpace(current.ConnectionString) ? "NOT CONFIGURED" : "CONFIGURED")}");
             Console.WriteLine();
             Console.WriteLine("1. Configure Database Provider");
-            if (!string.IsNullOrWhiteSpace(current.Provider))
-                Console.WriteLine("2. Configure Database Connection String");
-            Console.WriteLine("0. Exit");
+            Console.WriteLine("2. Configure Database Connection String");
+            Console.WriteLine("0. Continue");
             Console.WriteLine();
             Console.Write("Select an option: ");
 
             switch (Console.ReadLine())
             {
                 case "1":
-                    current = current with { Provider = SelectProvider() };
+                {
+                    var provider = SelectProvider();
+                    if (!string.IsNullOrWhiteSpace(provider))
+                    {
+                        current = current with
+                        {
+                            Provider = provider,
+                            ConnectionString = null
+                        };
+
+                        Environment.SetEnvironmentVariable("AUTH_DB_PROVIDER", provider);
+                        Environment.SetEnvironmentVariable("AUTH_DB_CONNECTION_STRING", null);
+                    }
+
                     break;
+                }
                 case "2" when !string.IsNullOrWhiteSpace(current.Provider):
-                    current = current with { ConnectionString = BuildConnectionString(current.Provider!) };
+                {
+                    var connectionString = BuildConnectionString(current.Provider!);
+                    current = current with { ConnectionString = connectionString };
+
+                    Environment.SetEnvironmentVariable(
+                        "AUTH_DB_CONNECTION_STRING",
+                        connectionString);
+
                     break;
+                }
                 case "0":
-                    Environment.Exit(0);
-                    return current;
+                    if (current.IsComplete)
+                        return current;
+
+                    Console.WriteLine("Both database environment variables are required.");
+                    Console.WriteLine("Press Enter to continue...");
+                    Console.ReadLine();
+                    break;
                 default:
                     Console.WriteLine("Invalid option.");
                     break;
             }
-
-            if (current.IsComplete)
-                current.SetEnvironmentVariables();
         }
-
-        await Task.CompletedTask;
-        return current;
     }
 
     private static string SelectProvider()
@@ -66,7 +87,9 @@ public static class DatabaseConfigurationMenu
                 case "2": return "PostgreSQL";
                 case "3": return "MySQL";
                 case "0": return string.Empty;
-                default: Console.WriteLine("Invalid option."); break;
+                default:
+                    Console.WriteLine("Invalid option.");
+                    break;
             }
         }
     }
@@ -77,17 +100,28 @@ public static class DatabaseConfigurationMenu
         Console.WriteLine($"Connection configuration: {provider}");
         Console.WriteLine("----------------------------------------");
 
-        var host = ReadRequired(provider == "SqlServer" ? "Server" : provider == "MySQL" ? "Server" : "Host");
-        var port = ReadOptional("Port", provider == "SqlServer" ? "1433" : provider == "PostgreSQL" ? "5432" : "3306");
+        var host = ReadRequired(provider == "PostgreSQL" ? "Host" : "Server");
+        var port = ReadOptional(
+            "Port",
+            provider switch
+            {
+                "SqlServer" => "1433",
+                "PostgreSQL" => "5432",
+                "MySQL" => "3306",
+                _ => throw new InvalidOperationException($"Unsupported provider: {provider}")
+            });
         var database = ReadRequired("Database");
         var user = ReadRequired(provider == "PostgreSQL" ? "Username" : "User");
         var password = ReadRequiredSecret("Password");
 
         return provider switch
         {
-            "SqlServer" => $"Server={host},{port};Database={database};User Id={user};Password={password};TrustServerCertificate=True",
-            "PostgreSQL" => $"Host={host};Port={port};Database={database};Username={user};Password={password}",
-            "MySQL" => $"Server={host};Port={port};Database={database};User={user};Password={password}",
+            "SqlServer" =>
+                $"Server={host},{port};Database={database};User Id={user};Password={password};TrustServerCertificate=True",
+            "PostgreSQL" =>
+                $"Host={host};Port={port};Database={database};Username={user};Password={password}",
+            "MySQL" =>
+                $"Server={host};Port={port};Database={database};User={user};Password={password}",
             _ => throw new InvalidOperationException($"Unsupported provider: {provider}")
         };
     }
@@ -128,9 +162,11 @@ public static class DatabaseConfigurationMenu
     private static string ReadHiddenInput()
     {
         var buffer = new List<char>();
+
         while (true)
         {
             var key = Console.ReadKey(intercept: true);
+
             if (key.Key == ConsoleKey.Enter)
             {
                 Console.WriteLine();
@@ -142,7 +178,7 @@ public static class DatabaseConfigurationMenu
                 if (buffer.Count > 0)
                 {
                     buffer.RemoveAt(buffer.Count - 1);
-                    Console.Write(" ");
+                    Console.Write("\b \b");
                 }
 
                 continue;
