@@ -27,17 +27,6 @@ public sealed class GoogleCredentialValidator : IFederatedCredentialValidator
         MapInboundClaims = false
     };
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="GoogleCredentialValidator"/> class.
-    /// </summary>
-    /// <param name="clientId">The Google OAuth client identifier accepted as the token audience.</param>
-    /// <param name="httpClient">The HTTP client used to retrieve Google OpenID Connect metadata and signing keys.</param>
-    /// <exception cref="ArgumentNullException">
-    /// Thrown when <paramref name="httpClient"/> is null.
-    /// </exception>
-    /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="clientId"/> is empty or consists only of whitespace.
-    /// </exception>
     public GoogleCredentialValidator(string clientId, HttpClient httpClient)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(clientId);
@@ -47,15 +36,6 @@ public sealed class GoogleCredentialValidator : IFederatedCredentialValidator
         _httpClient = httpClient;
     }
 
-    /// <summary>
-    /// Validates a Google federated credential and returns its federated identity.
-    /// </summary>
-    /// <param name="credential">The Google-signed JWT credential to validate.</param>
-    /// <param name="cancellationToken">The token used to cancel the validation operation.</param>
-    /// <returns>
-    /// A successful result containing the Google federated identity when the credential is valid;
-    /// otherwise, a failure result with <c>Auth.FederatedCredentialInvalid</c>.
-    /// </returns>
     public async Task<Result<FederatedIdentity>> ValidateAsync(
         string credential,
         CancellationToken cancellationToken = default)
@@ -100,6 +80,14 @@ public sealed class GoogleCredentialValidator : IFederatedCredentialValidator
                 new FederatedIdentity("Google", subject, email));
         }
         catch (SecurityTokenException)
+        {
+            return Result<FederatedIdentity>.Failure(InvalidFederatedCredential);
+        }
+        catch (HttpRequestException)
+        {
+            return Result<FederatedIdentity>.Failure(InvalidFederatedCredential);
+        }
+        catch (FormatException)
         {
             return Result<FederatedIdentity>.Failure(InvalidFederatedCredential);
         }
