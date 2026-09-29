@@ -14,6 +14,26 @@ public sealed class GoogleCredentialValidatorTests
     private const string ClientId = "google-client-id";
     private const string Issuer = "https://accounts.google.com";
 
+    [TestCase(null)]
+    [TestCase("")]
+    [TestCase("   ")]
+    public void Constructor_WithInvalidClientId_ThrowsArgumentException(string? clientId)
+    {
+        using var client = new HttpClient();
+
+        var act = () => new GoogleCredentialValidator(clientId!, client);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Test]
+    public void Constructor_WithNullHttpClient_ThrowsArgumentNullException()
+    {
+        var act = () => new GoogleCredentialValidator(ClientId, null!);
+
+        act.Should().Throw<ArgumentNullException>();
+    }
+
     [Test]
     public async Task ValidateAsync_WithValidToken_ReturnsSubAndEmail()
     {
