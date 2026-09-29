@@ -172,6 +172,100 @@ public sealed class MicrosoftCredentialValidatorTests
     }
 
     [Test]
+    public async Task ValidateAsync_WhenOpenIdConfigurationRequestFails_ReturnsInvalidCredential()
+    {
+        using var key = RSA.Create(2048);
+        using var client = CreateFailingClient(HttpStatusCode.InternalServerError);
+
+        var token = CreateToken(key, "microsoft-key", Issuer, ClientId, new Dictionary<string, object>
+        {
+            ["tid"] = TenantId,
+            ["oid"] = ObjectId,
+            ["exp"] = DateTimeOffset.UtcNow.AddMinutes(5).ToUnixTimeSeconds()
+        });
+
+        var result = await new MicrosoftCredentialValidator(ClientId, client).ValidateAsync(token);
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Code.Should().Be("Auth.FederatedCredentialInvalid");
+    }
+
+    [Test]
+    public async Task ValidateAsync_WhenJwksRequestFails_ReturnsInvalidCredential()
+    {
+        using var key = RSA.Create(2048);
+        using var client = CreateFailingJwksClient(HttpStatusCode.InternalServerError);
+
+        var token = CreateToken(key, "microsoft-key", Issuer, ClientId, new Dictionary<string, object>
+        {
+            ["tid"] = TenantId,
+            ["oid"] = ObjectId,
+            ["exp"] = DateTimeOffset.UtcNow.AddMinutes(5).ToUnixTimeSeconds()
+        });
+
+        var result = await new MicrosoftCredentialValidator(ClientId, client).ValidateAsync(token);
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Code.Should().Be("Auth.FederatedCredentialInvalid");
+    }
+
+    [Test]
+    public async Task ValidateAsync_WhenSigningKeyContainsMalformedBase64Url_ReturnsInvalidCredential()
+    {
+        using var key = RSA.Create(2048);
+        using var client = CreateClient(
+            key,
+            jwks: new
+            {
+                keys = new[]
+                {
+                    new
+                    {
+                        kty = "RSA",
+                        use = "sig",
+                        alg = "RS256",
+                        kid = "microsoft-key",
+                        n = "abcde",
+                        e = "AQAB"
+                    }
+                }
+            });
+
+        var token = CreateToken(key, "microsoft-key", Issuer, ClientId, new Dictionary<string, object>
+        {
+            ["tid"] = TenantId,
+            ["oid"] = ObjectId,
+            ["exp"] = DateTimeOffset.UtcNow.AddMinutes(5).ToUnixTimeSeconds()
+        });
+
+        var result = await new MicrosoftCredentialValidator(ClientId, client).ValidateAsync(token);
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Code.Should().Be("Auth.FederatedCredentialInvalid");
+    }
+
+    [Test]
+    public async Task ValidateAsync_WhenCancelled_PropagatesOperationCanceledException()
+    {
+        using var key = RSA.Create(2048);
+        using var client = new HttpClient(new CancellationStubHandler());
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+
+        var token = CreateToken(key, "microsoft-key", Issuer, ClientId, new Dictionary<string, object>
+        {
+            ["tid"] = TenantId,
+            ["oid"] = ObjectId,
+            ["exp"] = DateTimeOffset.UtcNow.AddMinutes(5).ToUnixTimeSeconds()
+        });
+
+        Func<Task> act = () => new MicrosoftCredentialValidator(ClientId, client)
+            .ValidateAsync(token, cancellation.Token);
+
+        await act.Should().ThrowAsync<OperationCanceledException>();
+    }
+
+    [Test]
     public async Task ValidateAsync_WithEmptyJwks_RejectsToken()
     {
         using var key = RSA.Create(2048);
@@ -248,6 +342,30 @@ public sealed class MicrosoftCredentialValidatorTests
             return Json(jwks ?? new { keys = new[] { Jwk(key, "microsoft-key") } });
         }));
 
+    private static HttpClient CreateFailingClient(HttpStatusCode statusCode) =>
+        new(new StubHandler(request =>
+        {
+            if (request.RequestUri?.AbsoluteUri.Contains("openid-configuration", StringComparison.OrdinalIgnoreCase) == true)
+                return new HttpResponseMessage(statusCode);
+
+            return Json(new { keys = Array.Empty<object>() });
+        }));
+
+    private static HttpClient CreateFailingJwksClient(HttpStatusCode statusCode) =>
+        new(new StubHandler(request =>
+        {
+            if (request.RequestUri?.AbsoluteUri.Contains("openid-configuration", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                return Json(new
+                {
+                    issuer = "https://login.microsoftonline.com/{tenantid}/v2.0",
+                    jwks_uri = "https://login.microsoftonline.com/common/discovery/v2.0/keys"
+                });
+            }
+
+            return new HttpResponseMessage(statusCode);
+        }));
+
     private static object Jwk(RSA key, string kid)
     {
         var p = key.ExportParameters(false);
@@ -273,6 +391,14 @@ public sealed class MicrosoftCredentialValidatorTests
 
     private static HttpResponseMessage JsonNull() =>
         new(HttpStatusCode.OK) { Content = new StringContent("null", Encoding.UTF8, "application/json") };
+
+    private sealed class CancellationStubHandler : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken) =>
+            Task.FromCanceled<HttpResponseMessage>(cancellationToken);
+    }
 
     private sealed class StubHandler(Func<HttpRequestMessage, HttpResponseMessage> handler) : HttpMessageHandler
     {

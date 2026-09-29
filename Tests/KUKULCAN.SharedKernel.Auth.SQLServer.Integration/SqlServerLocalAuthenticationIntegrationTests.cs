@@ -217,6 +217,58 @@ public sealed class SqlServerLocalAuthenticationIntegrationTests
     }
 
     [Test]
+    public async Task UserEmail_IsCanonicalizedWhenPersistedUsingSyncSaveChanges()
+    {
+        await using var context = await AuthDbContextFactory.CreateAsync(
+            SqlServerAuthenticationDatabase.ConnectionString,
+            Guid.NewGuid());
+
+        context.Users.Add(new AuthUserEntity
+        {
+            UserId = Guid.NewGuid(),
+            Email = "  USER@Example.COM  ",
+            PasswordHash = "stored-password-hash"
+        });
+
+        context.SaveChanges();
+        context.ChangeTracker.Clear();
+
+        var persistedUser = context.Users
+            .Single(entity => entity.Email == "user@example.com");
+
+        Assert.That(persistedUser.Email, Is.EqualTo("user@example.com"));
+    }
+
+    [Test]
+    public async Task UserEmail_IsCanonicalizedWhenModifiedAndPersisted()
+    {
+        await using var context = await AuthDbContextFactory.CreateAsync(
+            SqlServerAuthenticationDatabase.ConnectionString,
+            Guid.NewGuid());
+
+        var user = new AuthUserEntity
+        {
+            UserId = Guid.NewGuid(),
+            Email = "original@example.com",
+            PasswordHash = "stored-password-hash"
+        };
+
+        context.Users.Add(user);
+        await context.SaveChangesAsync();
+        context.ChangeTracker.Clear();
+
+        var persistedUser = await context.Users.SingleAsync();
+
+        persistedUser.Email = "  MODIFIED@Example.COM  ";
+        await context.SaveChangesAsync();
+        context.ChangeTracker.Clear();
+
+        var modifiedUser = await context.Users.SingleAsync(entity => entity.UserId == user.UserId);
+
+        Assert.That(modifiedUser.Email, Is.EqualTo("modified@example.com"));
+    }
+
+    [Test]
     public async Task UserEmail_MustBeUniqueAcrossLocalUsers()
     {
         await using var context = await AuthDbContextFactory.CreateAsync(

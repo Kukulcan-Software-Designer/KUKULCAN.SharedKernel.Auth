@@ -111,6 +111,14 @@ public sealed class MicrosoftCredentialValidator : IFederatedCredentialValidator
         {
             return Result<FederatedIdentity>.Failure(InvalidFederatedCredential);
         }
+        catch (HttpRequestException)
+        {
+            return Result<FederatedIdentity>.Failure(InvalidFederatedCredential);
+        }
+        catch (FormatException)
+        {
+            return Result<FederatedIdentity>.Failure(InvalidFederatedCredential);
+        }
         catch (ArgumentException)
         {
             return Result<FederatedIdentity>.Failure(InvalidFederatedCredential);
