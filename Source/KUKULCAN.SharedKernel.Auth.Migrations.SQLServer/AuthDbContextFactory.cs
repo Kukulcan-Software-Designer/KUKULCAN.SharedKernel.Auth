@@ -14,18 +14,31 @@ public sealed class AuthDbContextFactory : IDesignTimeDbContextFactory<AuthDbCon
     /// <inheritdoc />
     public AuthDbContext CreateDbContext(string[] args)
     {
-        var connectionString = Environment.GetEnvironmentVariable(
-            "KUKULCAN_AUTH_SQLSERVER_CONNECTION_STRING");
+        var providerValue = Environment.GetEnvironmentVariable("KUKULCAN_DATABASE_PROVIDER");
+        var connectionString = Environment.GetEnvironmentVariable("KUKULCAN_DATABASE_CONNECTION_STRING");
+
+        if (string.IsNullOrWhiteSpace(providerValue))
+        {
+            throw new InvalidOperationException(
+                "Set KUKULCAN_DATABASE_PROVIDER before running SQL Server Auth migrations.");
+        }
+
+        if (!Enum.TryParse<DatabaseProvider>(providerValue, true, out var provider) ||
+            provider != DatabaseProvider.SqlServer)
+        {
+            throw new InvalidOperationException(
+                "KUKULCAN_DATABASE_PROVIDER must be 'SqlServer' when running SQL Server Auth migrations.");
+        }
 
         if (string.IsNullOrWhiteSpace(connectionString))
         {
             throw new InvalidOperationException(
-                "Set KUKULCAN_AUTH_SQLSERVER_CONNECTION_STRING before running SQL Server Auth migrations.");
+                "Set KUKULCAN_DATABASE_CONNECTION_STRING before running SQL Server Auth migrations.");
         }
 
         var options = Options.Create(new KukulcanDatabaseOptions
         {
-            Provider = DatabaseProvider.SqlServer,
+            Provider = provider,
             ConnectionString = connectionString
         });
 
