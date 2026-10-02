@@ -3,6 +3,7 @@ using KUKULCAN.SharedKernel.Database.Configuration;
 namespace KUKULCAN.SharedKernel.Auth.Persistence;
 
 /// <summary>Resolves the provider-specific EF Core migration assembly used by Auth.</summary>
+/// <remarks>The selected assembly is consumed by <see cref="AuthDbContext"/> for runtime migration operations.</remarks>
 public static class AuthMigrations
 {
     /// <summary>Gets the migration assembly name for the selected database provider.</summary>
