@@ -79,3 +79,26 @@ Authentication persistence includes:
 The unit suite validates deterministic authentication behavior.
 
 The PostgreSQL, SQL Server and MySQL suites validate the real persistence pipeline, relational constraints, tenant behavior and email canonicalization.
+
+## EF Core Migrations
+
+Migrations are part of the persistence deployment boundary, not the domain model itself. The main Auth assembly contains the EF model; provider-specific migration packages contain the generated migration history and design-time factories.
+
+The initial migration creates only the Auth persistence concepts currently owned by the module:
+
+``
+Users
+TenantMemberships
+FederatedIdentities
+```
+
+There is intentionally no Tenant catalog table. `TenantMemberships.TenantId` remains an identifier reference to the tenant owned by the consuming application.
+
+Pending migrations can be applied by a consuming application with:
+
+``
+csharp
+await dbContext.Database.MigrateAsync(cancellationToken);
+```
+
+See [MIGRATIONS.md](MIGRATIONS.md) for provider-specific design-time commands.

@@ -98,7 +98,9 @@ Integration tests verify this contract against real SQL Server, PostgreSQL and M
 
 ## Persistence
 
-`AuthDbContext` is built on **KUKULCAN.SharedKernel.Database** and persists users, tenant memberships and federated identities.
+`AuthDbContext` is built on **KUKULCAN.SharedKernel.Database** and persists users, tenant memberships and federated identities. EF Core migrations are provided in separate PostgreSQL, SQL Server and MySQL migration packages so the main Auth package remains provider-neutral.
+
+See [Documentation/MIGRATIONS.md](Documentation/MIGRATIONS.md) for design-time generation and runtime application of migrations.
 
 User emails are canonicalized for added and modified `AuthUserEntity` instances on synchronous and asynchronous save paths:
 
@@ -136,11 +138,11 @@ Current `main` validation:
 
 | Test project | Result |
 |---|---:|
-| UnitTests | 129 / 129 |
-| PostgreSQL Integration | 41 / 41 |
-| SQL Server Integration | 41 / 41 |
-| MySQL Integration | 41 / 41 |
-| **Total** | **252 / 252** |
+| UnitTests | 130 / 130 |
+| PostgreSQL Integration | 42 / 42 |
+| SQL Server Integration | 42 / 42 |
+| MySQL Integration | 42 / 42 |
+| **Total** | **256 / 256** |
 
 ## TDD Workflow
 
@@ -194,6 +196,7 @@ Report vulnerabilities privately according to [SECURITY.md](SECURITY.md).
 ## Documentation
 
 - [CHANGELOG.md](CHANGELOG.md)
+- [MIGRATIONS.md](Documentation/MIGRATIONS.md)
 - [CONTRIBUTING.md](CONTRIBUTING.md)
 - [ROADMAP.md](ROADMAP.md)
 - [SECURITY.md](SECURITY.md)
