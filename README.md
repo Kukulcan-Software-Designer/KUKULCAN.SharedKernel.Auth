@@ -100,7 +100,37 @@ Integration tests verify this contract against real SQL Server, PostgreSQL and M
 
 `AuthDbContext` is built on **KUKULCAN.SharedKernel.Database** and persists users, tenant memberships and federated identities. EF Core migrations are provided in separate PostgreSQL, SQL Server and MySQL migration packages so the main Auth package remains provider-neutral.
 
-For PostgreSQL and SQL Server, the Auth tables are stored in the `Auth` database schema. MySQL keeps the tables in the database selected by the connection string because MySQL treats schemas as databases. See [Documentation/MIGRATIONS.md](Documentation/MIGRATIONS.md) for design-time generation and runtime application of migrations.
+For PostgreSQL and SQL Server, the Auth tables are stored in the `Auth` database schema. MySQL keeps the tables in the database selected by the connection string because MySQL treats schemas as databases.
+
+### EF Core Migration Architecture
+
+The migration model deliberately separates the common Auth model from provider-specific migration artifacts:
+
+```text
+KUKULCAN.SharedKernel.Auth
+        |
+        +-- Auth.Migrations.PostgreSQL
+        |
+        +-- Auth.Migrations.SQLServer
+        |
+        +-- Auth.Migrations.MySQL
+```
+
+Each migration project has its own EF Core provider, design-time factory, generated migrations and model snapshot.
+
+The current migration history is:
+
+| Provider | Current history |
+|---|---|
+| PostgreSQL | `InitialCreate` → `MoveTablesToAuthSchema` |
+| SQL Server | `InitialCreate` → `MoveTablesToAuthSchema` |
+| MySQL | `InitialCreate` |
+
+PostgreSQL and SQL Server use the explicit `Auth` schema. MySQL keeps the tables in the configured database because MySQL treats schemas as databases.
+
+When the Auth persistence model changes, a new migration is generated for every affected supported provider. Already-applied migrations are not edited.
+
+See [Documentation/MIGRATIONS.md](Documentation/MIGRATIONS.md) for the complete migration workflow, design-time commands, schema rationale, validation strategy and deployment guidance.
 
 User emails are canonicalized for added and modified `AuthUserEntity` instances on synchronous and asynchronous save paths:
 
@@ -114,11 +144,11 @@ This behavior is verified through real database round-trips for all three suppor
 
 ```text
 KUKULCAN.SharedKernel.Auth/
-├── Source/KUKULCAN.SharedKernel.Auth/
-│   ├── Authentication/{Local,Federated}/
-│   ├── Entities/
-│   ├── Persistence/
-│   └── GlobalUsings.cs
+├── Source/
+│   ├── KUKULCAN.SharedKernel.Auth/
+│   ├── KUKULCAN.SharedKernel.Auth.Migrations.PostgreSQL/
+│   ├── KUKULCAN.SharedKernel.Auth.Migrations.SQLServer/
+│   └── KUKULCAN.SharedKernel.Auth.Migrations.MySQL/
 ├── Tests/
 │   ├── KUKULCAN.SharedKernel.Auth.UnitTests/
 │   ├── KUKULCAN.SharedKernel.Auth.SQLServer.Integration/
@@ -153,6 +183,8 @@ TEST → RED → Source → GREEN → Coverage → PR → merge
 Production code is not changed before its corresponding behavior test exists. If a new test documents behavior already guaranteed by production code, immediate GREEN is valid and production code must not be modified merely to manufacture RED.
 
 Coverage is an audit signal, not the objective.
+
+For persistence-model changes, EF Core migration artifacts are generated after the source change reaches GREEN and are validated against the corresponding real database providers before the PR is merged.
 
 ## Requirements
 
@@ -196,7 +228,8 @@ Report vulnerabilities privately according to [SECURITY.md](SECURITY.md).
 ## Documentation
 
 - [CHANGELOG.md](CHANGELOG.md)
-- [MIGRATIONS.md](Documentation/MIGRATIONS.md)
+- [Documentation/README.md](Documentation/README.md)
+- [Documentation/MIGRATIONS.md](Documentation/MIGRATIONS.md)
 - [CONTRIBUTING.md](CONTRIBUTING.md)
 - [ROADMAP.md](ROADMAP.md)
 - [SECURITY.md](SECURITY.md)
