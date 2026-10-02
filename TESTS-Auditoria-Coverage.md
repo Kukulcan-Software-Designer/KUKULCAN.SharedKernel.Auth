@@ -22,13 +22,13 @@ The suites validate user persistence, tenant memberships, federated identities, 
 
 ## Current Test Matrix
 
-| Test project | Executed | Passed | Status |
-|---|---:|---:|---|
-| UnitTests | 129 | 129 | GREEN |
-| PostgreSQL Integration | 41 | 41 | GREEN |
-| SQL Server Integration | 41 | 41 | GREEN |
-| MySQL Integration | 41 | 41 | GREEN |
-| **Total** | **252** | **252** | **GREEN** |
+| Test project           | Executed |  Passed | Status    |
+|------------------------|---------:|--------:|-----------|
+| UnitTests              |      129 |     129 | GREEN     |
+| PostgreSQL Integration |       41 |      41 | GREEN     |
+| SQL Server Integration |       41 |      41 | GREEN     |
+| MySQL Integration      |       41 |      41 | GREEN     |
+| **Total**              |  **252** | **252** | **GREEN** |
 
 No functional test gap is currently justified solely by the existing authentication contract.
 
@@ -69,11 +69,11 @@ The three providers execute this contract independently.
 
 Google, Microsoft and Apple validators cover valid credentials, required claims, issuer, audience, lifetime, signatures, supported algorithms, OIDC configuration, JWKS discovery, empty/unusable signing keys, HTTP metadata failures, malformed Base64Url and cancellation.
 
-| Provider | Stable subject |
-|---|---|
-| Google | `sub` |
-| Microsoft | `tid:oid` |
-| Apple | `sub` |
+| Provider  | Stable subject |
+|-----------|----------------|
+| Google    | `sub`          |
+| Microsoft | `tid:oid`      |
+| Apple     | `sub`          |
 
 ## Deterministic Provider Testing
 
