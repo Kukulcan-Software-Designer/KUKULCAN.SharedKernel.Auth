@@ -54,3 +54,15 @@ Credential values and tokens must not be logged.
 OIDC discovery and signing-key endpoints are part of the provider validation contract. They are not arbitrary application endpoints.
 
 The validator must therefore validate the retrieved issuer and signing keys before accepting a credential.
+
+## EF Core Migrations
+
+The main Auth package remains provider-neutral. The migration implementation is supplied by one provider-specific package:
+
+- `KUKULCAN.SharedKernel.Auth.Migrations.PostgreSQL`
+- `KUKULCAN.SharedKernel.Auth.Migrations.SQLServer`
+- `KUKULCAN.SharedKernel.Auth.Migrations.MySQL`
+
+At runtime, `AuthDbContext` selects the migration assembly from `KukulcanDatabaseOptions.Provider`. The application must reference the migration package matching its configured provider before calling `Database.MigrateAsync()`.
+
+Design-time factories read provider-specific connection strings from environment variables. Connection strings and other credentials must never be committed.

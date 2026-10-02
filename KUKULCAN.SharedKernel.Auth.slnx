@@ -11,6 +11,7 @@
     <File Path="Documentation\README.md" />
     <File Path="Documentation\TENANCY.md" />
     <File Path="Documentation\TESTING.md" />
+    <File Path="Documentation\MIGRATIONS.md" />
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".gitignore" />
