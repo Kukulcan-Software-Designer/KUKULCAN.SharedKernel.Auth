@@ -29,10 +29,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Verify script exists
-        shell: ${{ matrix.shell }}
+      - name: Verify Bash script exists
+        if: runner.os != 'Windows'
+        shell: bash
         run: |
-          if (!(Test-Path "${{ matrix.script }}")) {
+          test -f "${{ matrix.script }}"
+
+      - name: Verify PowerShell script exists
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${{ matrix.script }}")) {
             throw "Required script not found: ${{ matrix.script }}"
           }
 
