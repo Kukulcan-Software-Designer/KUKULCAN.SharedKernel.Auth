@@ -73,11 +73,11 @@ Password hashes remain inside persistence models and are not exposed through aut
 
 Supported providers are Google, Microsoft and Apple.
 
-| Provider | Stable subject |
-|---|---|
-| Google | `sub` |
-| Microsoft | `tid:oid` |
-| Apple | `sub` |
+| Provider  | Stable subject |
+|-----------|----------------|
+| Google    | `sub`          |
+| Microsoft | `tid:oid`      |
+| Apple     | `sub`          |
 
 Provider validators verify issuer, audience, lifetime, required claims, signature, supported algorithms and signing keys discovered through JWKS. Invalid provider infrastructure input is normalized to `Auth.FederatedCredentialInvalid`; cancellation propagates as `OperationCanceledException`.
 
@@ -120,11 +120,11 @@ Each migration project has its own EF Core provider, design-time factory, genera
 
 The current migration history is:
 
-| Provider | Current history |
-|---|---|
+| Provider   | Current history                            |
+|------------|--------------------------------------------|
 | PostgreSQL | `InitialCreate` → `MoveTablesToAuthSchema` |
 | SQL Server | `InitialCreate` → `MoveTablesToAuthSchema` |
-| MySQL | `InitialCreate` |
+| MySQL      | `InitialCreate`                            |
 
 PostgreSQL and SQL Server use the explicit `Auth` schema. MySQL keeps the tables in the configured database because MySQL treats schemas as databases.
 
@@ -166,13 +166,13 @@ The three integration projects validate real persistence behavior, including aut
 
 Current `main` validation:
 
-| Test project | Result |
-|---|---:|
-| UnitTests | 130 / 130 |
-| PostgreSQL Integration | 42 / 42 |
-| SQL Server Integration | 42 / 42 |
-| MySQL Integration | 42 / 42 |
-| **Total** | **256 / 256** |
+| Test project           |        Result |
+|------------------------|--------------:|
+| UnitTests              |     130 / 130 |
+| PostgreSQL Integration |       42 / 42 |
+| SQL Server Integration |       42 / 42 |
+| MySQL Integration      |       42 / 42 |
+| **Total**              | **256 / 256** |
 
 ## TDD Workflow
 

@@ -60,13 +60,13 @@ The current `main` branch contains the completed authentication behavior and its
 
 ### Validation Status
 
-| Suite | Result |
-|---|---:|
-| UnitTests | 129 / 129 |
-| PostgreSQL Integration | 41 / 41 |
-| SQL Server Integration | 41 / 41 |
-| MySQL Integration | 41 / 41 |
-| **Total** | **252 / 252** |
+| Suite                  |        Result |
+|------------------------|--------------:|
+| UnitTests              |     129 / 129 |
+| PostgreSQL Integration |       41 / 41 |
+| SQL Server Integration |       41 / 41 |
+| MySQL Integration      |       41 / 41 |
+| **Total**              | **252 / 252** |
 
 No artificial tests are maintained solely to increase coverage.
 

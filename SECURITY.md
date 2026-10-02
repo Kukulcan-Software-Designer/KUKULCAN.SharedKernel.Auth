@@ -4,11 +4,11 @@
 
 ## Supported Versions
 
-| Version | Support |
-|---|---|
-| Latest stable release | Supported |
-| Older unsupported releases | Not supported |
-| Pre-release versions | Evaluation/testing only |
+| Version                    | Support                 |
+|----------------------------|-------------------------|
+| Latest stable release      | Supported               |
+| Older unsupported releases | Not supported           |
+| Pre-release versions       | Evaluation/testing only |
 
 ## Reporting a Vulnerability
 

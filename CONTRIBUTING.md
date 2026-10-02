@@ -67,11 +67,11 @@ Changes affecting tenant behavior require explicit behavior tests.
 
 Supported providers are Google, Microsoft and Apple.
 
-| Provider | Stable subject |
-|---|---|
-| Google | `sub` |
-| Microsoft | `tid:oid` |
-| Apple | `sub` |
+| Provider  | Stable subject |
+|-----------|----------------|
+| Google    | `sub`          |
+| Microsoft | `tid:oid`      |
+| Apple     | `sub`          |
 
 Provider tests must remain deterministic and must not call live identity-provider services.
 

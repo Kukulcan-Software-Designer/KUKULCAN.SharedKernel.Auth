@@ -61,13 +61,13 @@ Invalid credential infrastructure failures are normalized to `Auth.FederatedCred
 
 The functional audit found no remaining test justified solely by the current authentication contract.
 
-| Project | Status |
-|---|---:|
-| UnitTests | 129 / 129 |
-| PostgreSQL Integration | 41 / 41 |
-| SQL Server Integration | 41 / 41 |
-| MySQL Integration | 41 / 41 |
-| **Total** | **252 / 252** |
+| Project                |        Status |
+|------------------------|--------------:|
+| UnitTests              |     129 / 129 |
+| PostgreSQL Integration |       41 / 41 |
+| SQL Server Integration |       41 / 41 |
+| MySQL Integration      |       41 / 41 |
+| **Total**              | **252 / 252** |
 
 The project does not add artificial tests to pursue a percentage target.
 
