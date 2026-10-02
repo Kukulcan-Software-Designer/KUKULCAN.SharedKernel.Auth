@@ -100,7 +100,7 @@ Integration tests verify this contract against real SQL Server, PostgreSQL and M
 
 `AuthDbContext` is built on **KUKULCAN.SharedKernel.Database** and persists users, tenant memberships and federated identities. EF Core migrations are provided in separate PostgreSQL, SQL Server and MySQL migration packages so the main Auth package remains provider-neutral.
 
-See [Documentation/MIGRATIONS.md](Documentation/MIGRATIONS.md) for design-time generation and runtime application of migrations.
+For PostgreSQL and SQL Server, the Auth tables are stored in the `Auth` database schema. MySQL keeps the tables in the database selected by the connection string because MySQL treats schemas as databases. See [Documentation/MIGRATIONS.md](Documentation/MIGRATIONS.md) for design-time generation and runtime application of migrations.
 
 User emails are canonicalized for added and modified `AuthUserEntity` instances on synchronous and asynchronous save paths:
 
