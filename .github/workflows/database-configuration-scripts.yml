@@ -30,6 +30,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Verify Bash script exists
+        # Expected RED until the implementation scripts are added.
         if: runner.os != 'Windows'
         shell: bash
         run: |
