@@ -40,6 +40,40 @@ public sealed class AuthMigrationsIntegrationTests
         Assert.That(await context.FederatedIdentities.AnyAsync(), Is.False);
     }
 
+    [Test]
+    public async Task Migrations_CreateAuthTablesInAuthSchema()
+    {
+        var connectionString = CreateUniqueDatabaseConnectionString(
+            PostgreSQLAuthenticationDatabase.ConnectionString);
+
+        await using var context = new AuthDbContext(
+            Options.Create(new KukulcanDatabaseOptions
+            {
+                Provider = DatabaseProvider.PostgresSql,
+                ConnectionString = connectionString
+            }),
+            new TestTenantContext(Guid.NewGuid()),
+            new Mock<IClock>(MockBehavior.Strict).Object,
+            new Mock<IDomainEventDispatcher>(MockBehavior.Strict).Object);
+
+        await context.Database.MigrateAsync();
+
+        await using var connection = context.Database.GetDbConnection();
+        await connection.OpenAsync();
+
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT COUNT(*)
+            FROM information_schema.tables
+            WHERE table_schema = 'Auth'
+              AND table_name IN ('Users', 'TenantMemberships', 'FederatedIdentities');
+            """;
+
+        var count = Convert.ToInt32(await command.ExecuteScalarAsync());
+
+        Assert.That(count, Is.EqualTo(3));
+    }
+
     private static string CreateUniqueDatabaseConnectionString(string connectionString)
     {
         var builder = new DbConnectionStringBuilder
