@@ -13,6 +13,7 @@
 
   <ItemGroup>
       <ProjectReference Include="..\..\Source\KUKULCAN.SharedKernel.Auth\KUKULCAN.SharedKernel.Auth.csproj" />
+      <ProjectReference Include="..\..\Source\KUKULCAN.SharedKernel.Auth.Migrations.SQLServer\KUKULCAN.SharedKernel.Auth.Migrations.SQLServer.csproj" />
   </ItemGroup>
 
   <ItemGroup>

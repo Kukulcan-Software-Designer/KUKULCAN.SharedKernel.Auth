@@ -37,6 +37,9 @@
   </Folder>
   <Folder Name="/Source/">
     <Project Path="Source/KUKULCAN.SharedKernel.Auth/KUKULCAN.SharedKernel.Auth.csproj" />
+    <Project Path="Source/KUKULCAN.SharedKernel.Auth.Migrations.PostgreSQL/KUKULCAN.SharedKernel.Auth.Migrations.PostgreSQL.csproj" />
+    <Project Path="Source/KUKULCAN.SharedKernel.Auth.Migrations.SQLServer/KUKULCAN.SharedKernel.Auth.Migrations.SQLServer.csproj" />
+    <Project Path="Source/KUKULCAN.SharedKernel.Auth.Migrations.MySQL/KUKULCAN.SharedKernel.Auth.Migrations.MySQL.csproj" />
   </Folder>
   <Folder Name="/SourceClient/">
     <Project Path="SourceClient/KUKULCAN.SharedKernel.Auth.Client/KUKULCAN.SharedKernel.Auth.Client.csproj" />
