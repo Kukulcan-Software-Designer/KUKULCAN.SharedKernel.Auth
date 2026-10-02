@@ -4,7 +4,7 @@
 
 `KUKULCAN.SharedKernel.Auth` exposes an EF Core persistence model for local users, tenant memberships and federated identities.
 
-The main Auth package is provider-neutral. EF Core migrations are maintained in dedicated packages for:
+The main Auth package is provider-neutral. The provider-specific migration packages contain only the provider integration, design-time factory and generated migration artifacts. EF Core migrations are maintained in dedicated packages for:
 
 - PostgreSQL
 - SQL Server
