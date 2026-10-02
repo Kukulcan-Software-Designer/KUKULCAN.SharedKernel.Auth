@@ -14,8 +14,21 @@ public sealed class AuthDbContextFactory : IDesignTimeDbContextFactory<AuthDbCon
     /// <inheritdoc />
     public AuthDbContext CreateDbContext(string[] args)
     {
-        var connectionString = Environment.GetEnvironmentVariable(
-            "KUKULCAN_DATABASE_CONNECTION_STRING");
+        var providerValue = Environment.GetEnvironmentVariable("KUKULCAN_DATABASE_PROVIDER");
+        var connectionString = Environment.GetEnvironmentVariable("KUKULCAN_DATABASE_CONNECTION_STRING");
+
+        if (string.IsNullOrWhiteSpace(providerValue))
+        {
+            throw new InvalidOperationException(
+                "Set KUKULCAN_DATABASE_PROVIDER before running PostgreSQL Auth migrations.");
+        }
+
+        if (!Enum.TryParse<DatabaseProvider>(providerValue, true, out var provider) ||
+            provider != DatabaseProvider.PostgresSql)
+        {
+            throw new InvalidOperationException(
+                "KUKULCAN_DATABASE_PROVIDER must be 'PostgresSql' when running PostgreSQL Auth migrations.");
+        }
 
         if (string.IsNullOrWhiteSpace(connectionString))
         {
@@ -25,7 +38,7 @@ public sealed class AuthDbContextFactory : IDesignTimeDbContextFactory<AuthDbCon
 
         var options = Options.Create(new KukulcanDatabaseOptions
         {
-            Provider = DatabaseProvider.PostgresSql,
+            Provider = provider,
             ConnectionString = connectionString
         });
 
