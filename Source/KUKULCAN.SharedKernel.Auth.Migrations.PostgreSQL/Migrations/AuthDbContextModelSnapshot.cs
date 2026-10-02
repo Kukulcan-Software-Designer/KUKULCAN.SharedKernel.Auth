@@ -20,6 +20,8 @@ namespace KUKULCAN.SharedKernel.Auth.Migrations.PostgreSQL.Migrations
                 .HasAnnotation("ProductVersion", "10.0.12")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
+            modelBuilder.HasDefaultSchema("Auth");
+
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("KUKULCAN.SharedKernel.Auth.Entities.AuthFederatedIdentityEntity", b =>
