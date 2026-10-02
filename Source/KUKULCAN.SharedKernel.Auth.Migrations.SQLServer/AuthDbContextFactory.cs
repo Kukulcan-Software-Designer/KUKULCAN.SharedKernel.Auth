@@ -15,12 +15,12 @@ public sealed class AuthDbContextFactory : IDesignTimeDbContextFactory<AuthDbCon
     public AuthDbContext CreateDbContext(string[] args)
     {
         var connectionString = Environment.GetEnvironmentVariable(
-            "KUKULCAN_AUTH_SQLSERVER_CONNECTION_STRING");
+            "KUKULCAN_DATABASE_CONNECTION_STRING");
 
         if (string.IsNullOrWhiteSpace(connectionString))
         {
             throw new InvalidOperationException(
-                "Set KUKULCAN_AUTH_SQLSERVER_CONNECTION_STRING before running SQL Server Auth migrations.");
+                "Set KUKULCAN_DATABASE_CONNECTION_STRING before running SQL Server Auth migrations.");
         }
 
         var options = Options.Create(new KukulcanDatabaseOptions
