@@ -1,4 +1,11 @@
+using KUKULCAN.SharedKernel.Abstractions;
+using KUKULCAN.SharedKernel.Auth.Persistence;
+using KUKULCAN.SharedKernel.Database.Abstractions;
+using KUKULCAN.SharedKernel.Database.Configuration;
+using KUKULCAN.SharedKernel.DomainEvents.Abstractions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Moq;
 using NUnit.Framework;
 
 namespace KUKULCAN.SharedKernel.Auth.MySQL.Integration;
@@ -8,17 +15,34 @@ namespace KUKULCAN.SharedKernel.Auth.MySQL.Integration;
 public sealed class AuthMigrationsIntegrationTests
 {
     [Test]
-    public async Task MigrateAsync_OnFreshDatabase_CreatesAuthSchema()
+    public async Task Migrations_CanBeAppliedToMySqlDatabase()
     {
-        await using var context = AuthDbContextFactory.CreateExisting(
-            MySQLAuthenticationDatabase.ConnectionString,
-            Guid.NewGuid());
+        await using var context = new AuthDbContext(
+            Options.Create(new KukulcanDatabaseOptions
+            {
+                Provider = DatabaseProvider.MySql,
+                ConnectionString = MySQLAuthenticationDatabase.ConnectionString
+            }),
+            new TestTenantContext(Guid.NewGuid()),
+            new Mock<IClock>(MockBehavior.Strict).Object,
+            new Mock<IDomainEventDispatcher>(MockBehavior.Strict).Object);
+
+        await context.Database.ExecuteSqlRawAsync("DROP TABLE IF EXISTS FederatedIdentities");
+        await context.Database.ExecuteSqlRawAsync("DROP TABLE IF EXISTS TenantMemberships");
+        await context.Database.ExecuteSqlRawAsync("DROP TABLE IF EXISTS Users");
+        await context.Database.ExecuteSqlRawAsync("DROP TABLE IF EXISTS __EFMigrationsHistory");
 
         await context.Database.MigrateAsync();
 
+        Assert.That(await context.Database.GetPendingMigrationsAsync(), Is.Empty);
         Assert.That(await context.Database.CanConnectAsync(), Is.True);
-        Assert.That(await context.Users.CountAsync(), Is.EqualTo(0));
-        Assert.That(await context.TenantMemberships.CountAsync(), Is.EqualTo(0));
-        Assert.That(await context.FederatedIdentities.CountAsync(), Is.EqualTo(0));
+        Assert.That(await context.Users.AnyAsync(), Is.False);
+        Assert.That(await context.TenantMemberships.AnyAsync(), Is.False);
+        Assert.That(await context.FederatedIdentities.AnyAsync(), Is.False);
+    }
+
+    private sealed class TestTenantContext(Guid tenantId) : ITenantContext
+    {
+        public Guid TenantId { get; } = tenantId;
     }
 }
