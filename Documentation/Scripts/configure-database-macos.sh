@@ -2,13 +2,7 @@
 set -euo pipefail
 
 ENV_FILE="${HOME}/.config/kukulcan/database.env"
-SHELL_RC=""
-
-case "${SHELL:-}" in
-  */zsh) SHELL_RC="${HOME}/.zshrc" ;;
-  */bash) SHELL_RC="${HOME}/.bashrc" ;;
-  *) SHELL_RC="${HOME}/.profile" ;;
-esac
+SHELL_RC="${HOME}/.zshrc"
 
 mask_password() {
   local password=""
