@@ -51,6 +51,17 @@ public sealed class AuthDbContext : KukulcanDbContextBase
     }
 
     /// <inheritdoc />
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        if (_databaseOptions.Provider != DatabaseProvider.MySql)
+        {
+            modelBuilder.HasDefaultSchema("Auth");
+        }
+
+        base.OnModelCreating(modelBuilder);
+    }
+
+    /// <inheritdoc />
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
         CanonicalizeUserEmails();

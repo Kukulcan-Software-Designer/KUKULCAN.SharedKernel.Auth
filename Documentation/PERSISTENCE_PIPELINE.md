@@ -84,9 +84,9 @@ The PostgreSQL, SQL Server and MySQL suites validate the real persistence pipeli
 
 Migrations are part of the persistence deployment boundary, not the domain model itself. The main Auth assembly contains the EF model; provider-specific migration packages contain the generated migration history and design-time factories.
 
-The initial migration creates only the Auth persistence concepts currently owned by the module:
+The current Auth persistence model contains only the concepts owned by the module:
 
-``
+```text
 Users
 TenantMemberships
 FederatedIdentities
@@ -94,10 +94,21 @@ FederatedIdentities
 
 There is intentionally no Tenant catalog table. `TenantMemberships.TenantId` remains an identifier reference to the tenant owned by the consuming application.
 
+For PostgreSQL and SQL Server, these tables use the explicit `Auth` database schema:
+
+```text
+Auth.Users
+Auth.TenantMemberships
+Auth.FederatedIdentities
+```
+
+The `MoveTablesToAuthSchema` migration moves the previously deployed tables from the provider default schema into `Auth`.
+
+MySQL treats schemas as databases. To keep the configured database unchanged, the MySQL model does not apply a separate `Auth` schema and the tables remain in the configured database.
+
 Pending migrations can be applied by a consuming application with:
 
-``
-csharp
+```csharp
 await dbContext.Database.MigrateAsync(cancellationToken);
 ```
 

@@ -154,7 +154,21 @@ FederatedIdentities
 
 The current model deliberately contains no `Tenants` entity or tenant catalog table.
 
-Because the Auth entity configuration does not force an `Auth` schema, the physical schema is the provider default (for example `public` on PostgreSQL and `dbo` on SQL Server).
+## Database Schema
+
+For PostgreSQL and SQL Server, Auth tables are stored in the explicit `Auth` schema:
+
+```text
+Auth.Users
+Auth.TenantMemberships
+Auth.FederatedIdentities
+```
+
+The `MoveTablesToAuthSchema` migration moves the existing initial tables from the provider default schema into `Auth` without changing the table names.
+
+MySQL treats schemas as databases rather than namespaces inside a database. Following the same provider strategy used by `KUKULCAN.SharedKernel.i18n`, the Auth model does not apply a separate `Auth` schema on MySQL; the tables remain in the database selected by the configured connection string.
+
+The migration history table is managed separately by EF Core and is not part of the Auth table schema requirement.
 
 ## Validation
 
