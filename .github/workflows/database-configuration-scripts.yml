@@ -1,0 +1,74 @@
+name: Database Configuration Scripts
+
+on:
+  push:
+    branches:
+      - "FEATURES/DATABASE-CONFIGURATION-SCRIPTS"
+  pull_request:
+    branches:
+      - Develop
+
+jobs:
+  validate-scripts:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            script: Documentation/Scripts/configure-database-linux.sh
+            shell: bash
+          - os: macos-latest
+            script: Documentation/Scripts/configure-database-macos.sh
+            shell: bash
+          - os: windows-latest
+            script: Documentation/Scripts/Configure-Database-Windows.ps1
+            shell: pwsh
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify Bash script exists
+        # Expected RED until the implementation scripts are added.
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          test -f "${{ matrix.script }}"
+
+      - name: Verify PowerShell script exists
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${{ matrix.script }}")) {
+            throw "Required script not found: ${{ matrix.script }}"
+          }
+
+      - name: Validate Bash script
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          bash -n "${{ matrix.script }}"
+          grep -Fq "KUKULCAN_DATABASE_PROVIDER" "${{ matrix.script }}"
+          grep -Fq "KUKULCAN_DATABASE_CONNECTION_STRING" "${{ matrix.script }}"
+          grep -Fq "Salir sin registrar las variables" "${{ matrix.script }}"
+          grep -Fq "SqlServer" "${{ matrix.script }}"
+          grep -Fq "PostgresSql" "${{ matrix.script }}"
+          grep -Fq "MySql" "${{ matrix.script }}"
+
+      - name: Validate PowerShell script
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $content = Get-Content "${{ matrix.script }}" -Raw
+          [System.Management.Automation.Language.Parser]::ParseInput(
+            $content,
+            [ref]$null,
+            [ref]$null
+          ) | Out-Null
+          if ($content -notmatch 'KUKULCAN_DATABASE_PROVIDER') { throw 'Missing provider variable' }
+          if ($content -notmatch 'KUKULCAN_DATABASE_CONNECTION_STRING') { throw 'Missing connection string variable' }
+          if ($content -notmatch 'Salir sin registrar las variables') { throw 'Missing exit option text' }
+          if ($content -notmatch 'SqlServer') { throw 'Missing SQL Server provider' }
+          if ($content -notmatch 'PostgresSql') { throw 'Missing PostgreSQL provider' }
+          if ($content -notmatch 'MySql') { throw 'Missing MySQL provider' }
