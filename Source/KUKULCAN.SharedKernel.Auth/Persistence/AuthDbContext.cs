@@ -6,6 +6,7 @@ using KUKULCAN.SharedKernel.Database.Configuration;
 using KUKULCAN.SharedKernel.Database.Interceptors;
 using KUKULCAN.SharedKernel.DomainEvents.Abstractions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Options;
 
 namespace KUKULCAN.SharedKernel.Auth.Persistence;
@@ -13,6 +14,8 @@ namespace KUKULCAN.SharedKernel.Auth.Persistence;
 /// <summary>Database context for authentication persistence.</summary>
 public sealed class AuthDbContext : KukulcanDbContextBase
 {
+    private readonly KukulcanDatabaseOptions _databaseOptions;
+
     /// <summary>Initializes the authentication database context.</summary>
     public AuthDbContext(
         IOptions<KukulcanDatabaseOptions> options,
@@ -22,6 +25,7 @@ public sealed class AuthDbContext : KukulcanDbContextBase
         SlowQueryInterceptor? slowQueryInterceptor = null)
         : base(options, tenantContext, clock, domainEventDispatcher, slowQueryInterceptor)
     {
+        _databaseOptions = options.Value;
     }
 
     /// <summary>Gets the persisted local users.</summary>
@@ -32,6 +36,30 @@ public sealed class AuthDbContext : KukulcanDbContextBase
 
     /// <summary>Gets the persisted federated identities.</summary>
     public DbSet<AuthFederatedIdentityEntity> FederatedIdentities => Set<AuthFederatedIdentityEntity>();
+
+    /// <inheritdoc />
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        base.OnConfiguring(optionsBuilder);
+
+        var relationalOptions = RelationalOptionsExtension.Extract(optionsBuilder.Options);
+
+        ((IDbContextOptionsBuilderInfrastructure)optionsBuilder)
+            .AddOrUpdateExtension(
+                relationalOptions.WithMigrationsAssembly(
+                    AuthMigrations.GetAssemblyName(_databaseOptions.Provider)));
+    }
+
+    /// <inheritdoc />
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        if (_databaseOptions.Provider != DatabaseProvider.MySql)
+        {
+            modelBuilder.HasDefaultSchema("Auth");
+        }
+
+        base.OnModelCreating(modelBuilder);
+    }
 
     /// <inheritdoc />
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
