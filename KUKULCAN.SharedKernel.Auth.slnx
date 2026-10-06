@@ -13,6 +13,11 @@
     <File Path="Documentation\TESTING.md" />
     <File Path="Documentation\MIGRATIONS.md" />
   </Folder>
+  <Folder Name="/Documentation/Scripts/">
+    <File Path="Documentation\Scripts\configure-database-linux.sh" />
+    <File Path="Documentation\Scripts\configure-database-macos.sh" />
+    <File Path="Documentation\Scripts\Configure-Database-Windows.ps1" />
+  </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".gitignore" />
     <File Path="CHANGELOG.md" />
