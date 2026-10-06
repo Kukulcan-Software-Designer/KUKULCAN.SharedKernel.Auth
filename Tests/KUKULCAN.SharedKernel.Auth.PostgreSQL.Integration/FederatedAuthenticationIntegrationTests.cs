@@ -354,7 +354,7 @@ public sealed class FederatedAuthenticationIntegrationTests
             UserId = secondUserId
         });
 
-        Assert.ThrowsAsync<DbUpdateException>(
+        await Assert.ThrowsAsync<DbUpdateException>(
             async () => await secondContext.SaveChangesAsync());
     }
 
@@ -415,7 +415,7 @@ public sealed class FederatedAuthenticationIntegrationTests
             UserId = Guid.NewGuid()
         });
 
-        Assert.ThrowsAsync<DbUpdateException>(
+        await Assert.ThrowsAsync<DbUpdateException>(
             async () => await context.SaveChangesAsync());
     }
 
@@ -431,7 +431,7 @@ public sealed class FederatedAuthenticationIntegrationTests
 
         var store = new FederatedUserStore(context);
 
-        Assert.ThrowsAsync<OperationCanceledException>(
+        await Assert.ThrowsAsync<OperationCanceledException>(
             async () => await store.FindByFederatedIdentityAsync(
                 "Google",
                 "subject",
