@@ -14,7 +14,7 @@
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
         <PackageReleaseNotes>
-            Updated KUKULCAN.SharedKernel.Auth with local and federated authentication improvements, multi-tenant identity management, credential validation, and Entity Framework Core migration support across PostgreSQL, SQL Server, and MySQL. Added Microsoft and Apple federated credential validation, tenant-aware federated identity handling, Auth database migrations with the Auth schema, and design-time database configuration based on the canonical KUKULCAN database environment variables. Improved authentication contracts and persistence behavior, including tenant membership retrieval and normalized email handling. Updated the package version and release metadata to reflect the current authentication infrastructure.
+            Compared with the initial release, this revision adds Microsoft and Apple federated credential validation, tenant-aware federated identity handling, and expanded multi-tenant authentication behavior. It adds Entity Framework Core migration support for PostgreSQL, SQL Server, and MySQL, including the Auth database schema, and standardizes design-time database configuration through the KUKULCAN_DATABASE_PROVIDER and KUKULCAN_DATABASE_CONNECTION_STRING environment variables. Authentication contracts and persistence behavior have also been improved with tenant membership retrieval and normalized email handling.
         </PackageReleaseNotes>
         <RepositoryUrl>https://github.com/Kukulcan-Software-Designer/KUKULCAN.SharedKernel.Auth</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
