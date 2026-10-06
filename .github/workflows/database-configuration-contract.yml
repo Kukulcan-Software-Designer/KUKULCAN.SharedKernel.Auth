@@ -1,0 +1,42 @@
+name: Database Configuration Contract
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+    branches:
+      - Develop
+  workflow_dispatch:
+
+jobs:
+  validate-forbidden-variables:
+    name: Reject legacy database environment variables
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify legacy variable names are absent
+        shell: bash
+        run: |
+          prefix="KUKULCAN_DATABASE_"
+          forbidden_provider="${prefix}PROVIDER"
+          forbidden_connection="${prefix}CONNECTION_STRING"
+
+          matches=0
+
+          if git grep -n -F "${forbidden_provider}" -- .; then
+            matches=1
+          fi
+
+          if git grep -n -F "${forbidden_connection}" -- .; then
+            matches=1
+          fi
+
+          if [ "${matches}" -ne 0 ]; then
+            echo "Legacy database environment variables are forbidden."
+            exit 1
+          fi
+
+          echo "No forbidden legacy database environment variables found."
