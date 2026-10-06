@@ -88,15 +88,15 @@ $directory = Split-Path -Parent $envFile
 New-Item -ItemType Directory -Path $directory -Force | Out-Null
 
 @"
-KUKULCAN_DATABASE_PROVIDER=$provider
-KUKULCAN_DATABASE_CONNECTION_STRING=$connectionString
+KUKULCAN__DATABASE__PROVIDER=$provider
+KUKULCAN__DATABASE__CONNECTIONSTRING=$connectionString
 "@ | Set-Content -Path $envFile -Encoding utf8NoBOM
 
-[Environment]::SetEnvironmentVariable('KUKULCAN_DATABASE_PROVIDER', $provider, 'User')
-[Environment]::SetEnvironmentVariable('KUKULCAN_DATABASE_CONNECTION_STRING', $connectionString, 'User')
+[Environment]::SetEnvironmentVariable('KUKULCAN__DATABASE__PROVIDER', $provider, 'User')
+[Environment]::SetEnvironmentVariable('KUKULCAN__DATABASE__CONNECTIONSTRING', $connectionString, 'User')
 
-$env:KUKULCAN_DATABASE_PROVIDER = $provider
-$env:KUKULCAN_DATABASE_CONNECTION_STRING = $connectionString
+$env:KUKULCAN__DATABASE__PROVIDER = $provider
+$env:KUKULCAN__DATABASE__CONNECTIONSTRING = $connectionString
 
 Write-Host 'Las variables de entorno de base de datos han sido registradas.'
 Write-Host "Provider: $provider"
