@@ -14,26 +14,26 @@ public sealed class AuthDbContextFactory : IDesignTimeDbContextFactory<AuthDbCon
     /// <inheritdoc />
     public AuthDbContext CreateDbContext(string[] args)
     {
-        var providerValue = Environment.GetEnvironmentVariable("KUKULCAN_DATABASE_PROVIDER");
-        var connectionString = Environment.GetEnvironmentVariable("KUKULCAN_DATABASE_CONNECTION_STRING");
+        var providerValue = Environment.GetEnvironmentVariable("KUKULCAN__DATABASE__PROVIDER");
+        var connectionString = Environment.GetEnvironmentVariable("KUKULCAN__DATABASE__CONNECTIONSTRING");
 
         if (string.IsNullOrWhiteSpace(providerValue))
         {
             throw new InvalidOperationException(
-                "Set KUKULCAN_DATABASE_PROVIDER before running MySQL Auth migrations.");
+                "Set KUKULCAN__DATABASE__PROVIDER before running MySQL Auth migrations.");
         }
 
         if (!Enum.TryParse<DatabaseProvider>(providerValue, true, out var provider) ||
             provider != DatabaseProvider.MySql)
         {
             throw new InvalidOperationException(
-                "KUKULCAN_DATABASE_PROVIDER must be 'MySql' when running MySQL Auth migrations.");
+                "KUKULCAN__DATABASE__PROVIDER must be 'MySql' when running MySQL Auth migrations.");
         }
 
         if (string.IsNullOrWhiteSpace(connectionString))
         {
             throw new InvalidOperationException(
-                "Set KUKULCAN_DATABASE_CONNECTION_STRING before running MySQL Auth migrations.");
+                "Set KUKULCAN__DATABASE__CONNECTIONSTRING before running MySQL Auth migrations.");
         }
 
         var options = Options.Create(new KukulcanDatabaseOptions
