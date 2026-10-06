@@ -189,7 +189,7 @@ public sealed class MySQLLocalAuthenticationIntegrationTests
             PasswordHash = "second-hash"
         });
 
-        Assert.ThrowsAsync<DbUpdateException>(
+        await Assert.ThrowsAsync<DbUpdateException>(
             async () => await context.SaveChangesAsync());
     }
 
@@ -289,7 +289,7 @@ public sealed class MySQLLocalAuthenticationIntegrationTests
                 PasswordHash = "second-hash"
             });
 
-        Assert.ThrowsAsync<DbUpdateException>(
+        await Assert.ThrowsAsync<DbUpdateException>(
             async () => await context.SaveChangesAsync());
     }
 
@@ -325,7 +325,7 @@ public sealed class MySQLLocalAuthenticationIntegrationTests
             TenantId = tenantId
         });
 
-        Assert.ThrowsAsync<DbUpdateException>(
+        await Assert.ThrowsAsync<DbUpdateException>(
             async () => await context.SaveChangesAsync());
     }
 
@@ -342,7 +342,7 @@ public sealed class MySQLLocalAuthenticationIntegrationTests
             TenantId = Guid.NewGuid()
         });
 
-        Assert.ThrowsAsync<DbUpdateException>(
+        await Assert.ThrowsAsync<DbUpdateException>(
             async () => await context.SaveChangesAsync());
     }
 
@@ -358,7 +358,7 @@ public sealed class MySQLLocalAuthenticationIntegrationTests
 
         var store = new LocalUserStore(context);
 
-        Assert.ThrowsAsync<OperationCanceledException>(
+        await Assert.ThrowsAsync<OperationCanceledException>(
             async () => await store.FindByEmailAsync(
                 "user@example.com",
                 cancellationSource.Token));
