@@ -14,7 +14,7 @@
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
         <PackageReleaseNotes>
-            Compared with version 1.1.3, this release updates the KUKULCAN.SharedKernel.Database dependency from 1.0.4 to 1.1.0, bringing the latest shared database infrastructure and configuration improvements into the authentication package. The Auth package version is also advanced to 1.1.4 to reflect this dependency update. No other authentication API or behavioral changes are introduced by this revision.
+            Compared with the initial release, this revision adds Microsoft and Apple federated credential validation, tenant-aware federated identity handling, and expanded multi-tenant authentication behavior. It adds Entity Framework Core migration support for PostgreSQL, SQL Server, and MySQL, including the Auth database schema, and standardizes design-time database configuration through the canonical KUKULCAN database provider and connection-string environment settings. Authentication contracts and persistence behavior have also been improved with tenant membership retrieval and normalized email handling.
         </PackageReleaseNotes>
         <RepositoryUrl>https://github.com/Kukulcan-Software-Designer/KUKULCAN.SharedKernel.Auth</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
