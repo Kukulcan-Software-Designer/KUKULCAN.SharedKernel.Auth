@@ -28,7 +28,7 @@
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>
       <PackageReference Include="Microsoft.Extensions.Logging" Version="10.*" />
-      <PackageReference Include="KUKULCAN.SharedKernel.Database" Version="1.0.4" />
+      <PackageReference Include="KUKULCAN.SharedKernel.Database" Version="1.1.0" />
   </ItemGroup>
 
 </Project>
