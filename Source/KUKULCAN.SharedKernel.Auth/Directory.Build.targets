@@ -9,12 +9,12 @@
         <Copyright>GPL 2026 Kukulcán Software Designer</Copyright>
         <PackageProjectUrl>https://www.kukulcan.org.mx/Software/SharedKernel/Autentication</PackageProjectUrl>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <PackageOutputPath>$(SolutionDir)NuGet\</PackageOutputPath>
+        <PackageOutputPath>$(SolutionDir)NuGet\\</PackageOutputPath>
         <PackageTags>kukulcan;sharedkernel;autentication</PackageTags>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
         <PackageReleaseNotes>
-            Compared with version 1.1.3, this release updates the KUKULCAN.SharedKernel.Database dependency from 1.0.4 to 1.1.0, bringing the latest shared database infrastructure and configuration improvements into the authentication package. The Auth package version is also advanced to 1.1.4 to reflect this dependency update. No other authentication API or behavioral changes are introduced by this revision.
+            Compared with version 1.1.4, this release standardizes the database configuration contract around the KUKULCAN__DATABASE__PROVIDER and KUKULCAN__DATABASE__CONNECTIONSTRING environment variables. It strengthens automated checks to detect legacy configuration names and validate consistency across migration factories, documentation, and setup scripts. Database setup scripts are validated across Linux, Windows, and macOS, and the related SQL Server migration and integration project configuration is updated. No authentication API changes are introduced in this release.
         </PackageReleaseNotes>
         <RepositoryUrl>https://github.com/Kukulcan-Software-Designer/KUKULCAN.SharedKernel.Auth</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
@@ -25,7 +25,7 @@
     </PropertyGroup>
 
     <ItemGroup Condition="'$(Configuration)' == 'Release'">
-        <None Include="$(MSBuildThisFileDirectory)..\..\LICENSE" Pack="true" PackagePath="\" />
-        <None Include="$(MSBuildThisFileDirectory)..\..\README.md" Pack="true" PackagePath="\" />
+        <None Include="$(MSBuildThisFileDirectory)..\\..\\LICENSE" Pack="true" PackagePath="\\" />
+        <None Include="$(MSBuildThisFileDirectory)..\\..\\README.md" Pack="true" PackagePath="\\" />
     </ItemGroup>
 </Project>
