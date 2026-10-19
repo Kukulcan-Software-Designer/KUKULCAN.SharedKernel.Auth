@@ -3,8 +3,7 @@ name: Database Configuration Scripts
 on:
   push:
     branches:
-      - "FEATURES/DATABASE-CONFIGURATION-SCRIPTS"
-      - "FEATURES/DATABASE-CONFIGURATION-CONTRACT"
+      - "**"
   pull_request:
     branches:
       - Develop
