@@ -19,7 +19,7 @@ The canonical environment-variable contract is:
 | `KUKULCAN__DATABASE__PROVIDER` | Selects the database provider | `PostgresSql`, `SqlServer` or `MySql` |
 | `KUKULCAN__DATABASE__CONNECTIONSTRING` | Connection string for the selected database | Provider-specific connection string |
 
-These names are shared by runtime configuration, provider-specific EF Core migration design-time factories, and the cross-platform configuration scripts. Do not use legacy alternatives such as `KUKULCAN_CONNECTION_STRING` or `KUKULCAN_DATABASE_PROVIDER`.
+These names are shared by runtime configuration, provider-specific EF Core migration design-time factories, and the cross-platform configuration scripts. Do not use older variable names; this contract is authoritative.
 
 For example, PostgreSQL configuration in a Bash shell is:
 
