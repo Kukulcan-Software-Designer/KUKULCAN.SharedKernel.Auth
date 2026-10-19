@@ -10,14 +10,14 @@ on:
   workflow_dispatch:
 
 jobs:
-  validate-forbidden-variables:
-    name: Reject legacy database environment variables
+  validate-database-configuration:
+    name: Enforce canonical database environment variables
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Verify legacy variable names are absent
+      - name: Reject legacy database environment variables
         shell: bash
         run: |
           prefix="KUKULCAN_DATABASE_"
@@ -27,17 +27,11 @@ jobs:
 
           matches=0
 
-          if git grep -n -F "${forbidden_provider}" -- .; then
-            matches=1
-          fi
-
-          if git grep -n -F "${forbidden_connection}" -- .; then
-            matches=1
-          fi
-
-          if git grep -n -F "${forbidden_design_time_connection}" -- .; then
-            matches=1
-          fi
+          for forbidden in "${forbidden_provider}" "${forbidden_connection}" "${forbidden_design_time_connection}"; do
+            if git grep -n -F "${forbidden}" -- .; then
+              matches=1
+            fi
+          done
 
           if [ "${matches}" -ne 0 ]; then
             echo "Legacy database environment variables are forbidden."
@@ -45,3 +39,53 @@ jobs:
           fi
 
           echo "No forbidden legacy database environment variables found."
+
+      - name: Verify canonical variables in migration factories
+        shell: bash
+        run: |
+          provider_variable="KUKULCAN__DATABASE__PROVIDER"
+          connection_variable="KUKULCAN__DATABASE__CONNECTIONSTRING"
+
+          factories=(
+            "Source/KUKULCAN.SharedKernel.Auth.Migrations.PostgreSQL/AuthDbContextFactory.cs"
+            "Source/KUKULCAN.SharedKernel.Auth.Migrations.SQLServer/AuthDbContextFactory.cs"
+            "Source/KUKULCAN.SharedKernel.Auth.Migrations.MySQL/AuthDbContextFactory.cs"
+          )
+
+          for factory in "${factories[@]}"; do
+            test -f "${factory}"
+            grep -Fq "${provider_variable}" "${factory}" || {
+              echo "Missing ${provider_variable} in ${factory}"
+              exit 1
+            }
+            grep -Fq "${connection_variable}" "${factory}" || {
+              echo "Missing ${connection_variable} in ${factory}"
+              exit 1
+            }
+          done
+
+      - name: Verify canonical variables in documentation and setup scripts
+        shell: bash
+        run: |
+          provider_variable="KUKULCAN__DATABASE__PROVIDER"
+          connection_variable="KUKULCAN__DATABASE__CONNECTIONSTRING"
+
+          files=(
+            "Documentation/CONFIGURATION.md"
+            "Documentation/MIGRATIONS.md"
+            "Documentation/Scripts/configure-database-linux.sh"
+            "Documentation/Scripts/configure-database-macos.sh"
+            "Documentation/Scripts/Configure-Database-Windows.ps1"
+          )
+
+          for file in "${files[@]}"; do
+            test -f "${file}"
+            grep -Fq "${provider_variable}" "${file}" || {
+              echo "Missing ${provider_variable} in ${file}"
+              exit 1
+            }
+            grep -Fq "${connection_variable}" "${file}" || {
+              echo "Missing ${connection_variable} in ${file}"
+              exit 1
+            }
+          done
