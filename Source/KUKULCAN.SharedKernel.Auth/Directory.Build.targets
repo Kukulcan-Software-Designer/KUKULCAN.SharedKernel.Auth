@@ -9,7 +9,7 @@
         <Copyright>GPL 2026 Kukulcán Software Designer</Copyright>
         <PackageProjectUrl>https://www.kukulcan.org.mx/Software/SharedKernel/Autentication</PackageProjectUrl>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <PackageOutputPath>$(SolutionDir)NuGet\\</PackageOutputPath>
+        <PackageOutputPath>$(SolutionDir)NuGet\</PackageOutputPath>
         <PackageTags>kukulcan;sharedkernel;autentication</PackageTags>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
@@ -25,7 +25,7 @@
     </PropertyGroup>
 
     <ItemGroup Condition="'$(Configuration)' == 'Release'">
-        <None Include="$(MSBuildThisFileDirectory)..\\..\\LICENSE" Pack="true" PackagePath="\\" />
-        <None Include="$(MSBuildThisFileDirectory)..\\..\\README.md" Pack="true" PackagePath="\\" />
+        <None Include="$(MSBuildThisFileDirectory)..\..\LICENSE" Pack="true" PackagePath="\" />
+        <None Include="$(MSBuildThisFileDirectory)..\..\README.md" Pack="true" PackagePath="\" />
     </ItemGroup>
 </Project>
