@@ -14,10 +14,10 @@ Database provider, connection string, retry, pool and diagnostic settings theref
 
 The canonical environment-variable contract is:
 
-| Variable | Purpose | Example |
-|---|---|---|
-| `KUKULCAN__DATABASE__PROVIDER` | Selects the database provider | `PostgresSql`, `SqlServer` or `MySql` |
-| `KUKULCAN__DATABASE__CONNECTIONSTRING` | Connection string for the selected database | Provider-specific connection string |
+| Variable                               | Purpose                                     | Example                               |
+|----------------------------------------|---------------------------------------------|---------------------------------------|
+| `KUKULCAN__DATABASE__PROVIDER`         | Selects the database provider               | `PostgresSql`, `SqlServer` or `MySql` |
+| `KUKULCAN__DATABASE__CONNECTIONSTRING` | Connection string for the selected database | Provider-specific connection string   |
 
 These names are shared by runtime configuration, provider-specific EF Core migration design-time factories, and the cross-platform configuration scripts. Do not use older variable names; this contract is authoritative.
 
