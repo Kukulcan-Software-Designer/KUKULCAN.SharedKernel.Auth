@@ -169,9 +169,7 @@ The factory constructs the same Auth model used at runtime but supplies the mini
 The factories require these provider-specific environment variables:
 
 ```text
-KUKULCAN_AUTH_POSTGRESQL_CONNECTION_STRING
-KUKULCAN_AUTH_SQLSERVER_CONNECTION_STRING
-KUKULCAN_AUTH_MYSQL_CONNECTION_STRING
+KUKULCAN_CONNECTION_STRING
 ```
 
 The connection string is read only by the design-time factory.
@@ -211,7 +209,7 @@ Use the same logical migration name for each provider so the history is easy to 
 Set the design-time connection:
 
 ```bash
-export KUKULCAN_AUTH_POSTGRESQL_CONNECTION_STRING='Host=localhost;Database=KukulcanAuth;Username=...;Password=...;'
+export KUKULCAN_CONNECTION_STRING='Host=localhost;Database=KukulcanAuth;Username=...;Password=...;'
 ```
 
 Generate the migration:
@@ -228,7 +226,7 @@ dotnet ef migrations add <MigrationName> \
 Set the design-time connection:
 
 ```bash
-export KUKULCAN_AUTH_SQLSERVER_CONNECTION_STRING='Server=localhost;Database=KukulcanAuth;User Id=...;Password=...;TrustServerCertificate=True;'
+export KUKULCAN_CONNECTION_STRING='Server=localhost;Database=KukulcanAuth;User Id=...;Password=...;TrustServerCertificate=True;'
 ```
 
 Generate the migration:
@@ -245,7 +243,7 @@ dotnet ef migrations add <MigrationName> \
 Set the design-time connection:
 
 ```bash
-export KUKULCAN_AUTH_MYSQL_CONNECTION_STRING='Server=localhost;Database=KukulcanAuth;User Id=...;Password=...;'
+export KUKULCAN_CONNECTION_STRING='Server=localhost;Database=KukulcanAuth;User Id=...;Password=...;'
 ```
 
 Generate the migration:
