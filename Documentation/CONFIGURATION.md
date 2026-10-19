@@ -12,6 +12,24 @@ Authentication persistence uses the database configuration supplied by `KUKULCAN
 
 Database provider, connection string, retry, pool and diagnostic settings therefore belong to the shared database configuration contract.
 
+The canonical environment-variable contract is:
+
+| Variable | Purpose | Example |
+|---|---|---|
+| `KUKULCAN__DATABASE__PROVIDER` | Selects the database provider | `PostgresSql`, `SqlServer` or `MySql` |
+| `KUKULCAN__DATABASE__CONNECTIONSTRING` | Connection string for the selected database | Provider-specific connection string |
+
+These names are shared by runtime configuration, provider-specific EF Core migration design-time factories, and the cross-platform configuration scripts. Do not use legacy alternatives such as `KUKULCAN_CONNECTION_STRING` or `KUKULCAN_DATABASE_PROVIDER`.
+
+For example, PostgreSQL configuration in a Bash shell is:
+
+```bash
+export KUKULCAN__DATABASE__PROVIDER='PostgresSql'
+export KUKULCAN__DATABASE__CONNECTIONSTRING='Host=localhost;Database=KukulcanAuth;Username=...;Password=...;'
+```
+
+The provider value must match the migration project in use. Keep connection strings and credentials outside source control, using environment variables or a secret-management system.
+
 ## Local Authentication
 
 Local authentication requires implementations for:
