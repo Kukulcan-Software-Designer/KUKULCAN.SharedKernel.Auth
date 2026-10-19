@@ -23,6 +23,7 @@ jobs:
           prefix="KUKULCAN_DATABASE_"
           forbidden_provider="${prefix}PROVIDER"
           forbidden_connection="${prefix}CONNECTION_STRING"
+          forbidden_design_time_connection="KUKULCAN_CONNECTION_""STRING"
 
           matches=0
 
@@ -31,6 +32,10 @@ jobs:
           fi
 
           if git grep -n -F "${forbidden_connection}" -- .; then
+            matches=1
+          fi
+
+          if git grep -n -F "${forbidden_design_time_connection}" -- .; then
             matches=1
           fi
 
