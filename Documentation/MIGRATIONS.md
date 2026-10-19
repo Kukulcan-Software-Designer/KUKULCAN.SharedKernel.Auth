@@ -166,13 +166,12 @@ Each migration package contains an `IDesignTimeDbContextFactory<AuthDbContext>`.
 
 The factory constructs the same Auth model used at runtime but supplies the minimum design-time services required by EF Core. This avoids requiring an ASP.NET Core application host merely to scaffold a migration.
 
-The factories require these provider-specific environment variables:
+Each factory requires the same two environment variables used by the shared database configuration contract:
 
-```text
-KUKULCAN_CONNECTION_STRING
-```
+- `KUKULCAN__DATABASE__PROVIDER`: must match the provider-specific migration project.
+- `KUKULCAN__DATABASE__CONNECTIONSTRING`: connection string for the target database.
 
-The connection string is read only by the design-time factory.
+Supported provider values are `PostgresSql`, `SqlServer` and `MySql`. Each factory rejects a provider value that does not match its migration project. These variables are read by the design-time factory; never commit connection strings or credentials.
 
 Use environment variables or an external secret-management mechanism. Never commit database credentials to source control.
 
@@ -209,7 +208,8 @@ Use the same logical migration name for each provider so the history is easy to 
 Set the design-time connection:
 
 ```bash
-export KUKULCAN_CONNECTION_STRING='Host=localhost;Database=KukulcanAuth;Username=...;Password=...;'
+export KUKULCAN__DATABASE__PROVIDER='PostgresSql'
+export KUKULCAN__DATABASE__CONNECTIONSTRING='Host=localhost;Database=KukulcanAuth;Username=...;Password=...;'
 ```
 
 Generate the migration:
@@ -226,7 +226,8 @@ dotnet ef migrations add <MigrationName> \
 Set the design-time connection:
 
 ```bash
-export KUKULCAN_CONNECTION_STRING='Server=localhost;Database=KukulcanAuth;User Id=...;Password=...;TrustServerCertificate=True;'
+export KUKULCAN__DATABASE__PROVIDER='SqlServer'
+export KUKULCAN__DATABASE__CONNECTIONSTRING='Server=localhost;Database=KukulcanAuth;User Id=...;Password=...;TrustServerCertificate=True;'
 ```
 
 Generate the migration:
@@ -243,7 +244,8 @@ dotnet ef migrations add <MigrationName> \
 Set the design-time connection:
 
 ```bash
-export KUKULCAN_CONNECTION_STRING='Server=localhost;Database=KukulcanAuth;User Id=...;Password=...;'
+export KUKULCAN__DATABASE__PROVIDER='MySql'
+export KUKULCAN__DATABASE__CONNECTIONSTRING='Server=localhost;Database=KukulcanAuth;User Id=...;Password=...;'
 ```
 
 Generate the migration:
