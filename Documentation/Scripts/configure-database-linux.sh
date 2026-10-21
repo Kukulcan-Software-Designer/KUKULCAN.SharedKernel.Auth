@@ -35,7 +35,7 @@ mask_password() {
 
 
 show_progress() {
-  printf '[%3d%%] %s\\n' "$1" "$2"
+  printf '[%3d%%] %s\n' "$1" "$2"
 }
 
 escape_value() {
@@ -116,10 +116,24 @@ printf '%s\n' "Host: localhost"
 printf '%s\n' "Port: ${port}"
 printf '%s\n' "La configuración persistirá para futuras sesiones de terminal."
 show_progress 30 "Validating the .NET SDK and migration project"
-command -v dotnet >/dev/null 2>&1 || { printf '%s\\n' "Error: .NET SDK not found." >&2; exit 1; }
-[[ -f "${migration_project}" ]] || { printf 'Error: migration project not found: %s\\n' "${migration_project}" >&2; exit 1; }
-show_progress 40 "Discovering EF Core migrations"
-dotnet ef migrations list --project "${migration_project}" --startup-project "${migration_project}" --context AuthDbContext
+command -v dotnet >/dev/null 2>&1 || { printf '%s\n' "Error: .NET SDK not found." >&2; exit 1; }
+[[ -f "${migration_project}" ]] || { printf 'Error: migration project not found: %s\n' "${migration_project}" >&2; exit 1; }
+show_progress 40 "Discovering pending EF Core migrations"
+migration_output="$(dotnet ef migrations list --project "${migration_project}" --startup-project "${migration_project}" --context AuthDbContext 2>&1)"
+printf '%s\n' "${migration_output}"
+pending_count="$(printf '%s\n' "${migration_output}" | grep -Ec '\\(Pending\\)' || true)"
 show_progress 50 "Applying EF Core migrations to the selected database"
-dotnet ef database update --project "${migration_project}" --startup-project "${migration_project}" --context AuthDbContext
+applied_count=0
+dotnet ef database update --project "${migration_project}" --startup-project "${migration_project}" --context AuthDbContext 2>&1 |
+  while IFS= read -r line; do
+    printf '%s\n' "${line}"
+    if [[ "${line}" == *"Applying migration"* ]]; then
+      applied_count=$((applied_count + 1))
+      if (( pending_count > 0 )); then
+        percent=$((50 + applied_count * 40 / pending_count))
+        (( percent > 90 )) && percent=90
+        show_progress "${percent}" "Applied migration ${applied_count} of ${pending_count}"
+      fi
+    fi
+  done
 show_progress 100 "Database setup completed"
