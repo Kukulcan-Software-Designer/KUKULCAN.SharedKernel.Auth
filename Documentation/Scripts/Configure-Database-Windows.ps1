@@ -1,10 +1,18 @@
 $ErrorActionPreference = 'Stop'
 
+$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
+Set-Location $repoRoot
+
 $envFile = Join-Path $HOME '.config/kukulcan/database.env'
+
+
+function Show-Progress([int]$Percent, [string]$Message) {
+    Write-Host ('[{0,3}%] {1}' -f $Percent, $Message)
+}
 
 function Read-MaskedPassword {
     $password = [System.Text.StringBuilder]::new()
-    Write-Host -NoNewline 'Password: '
+    Write-Host -NoNewline 'Password (each character shown as *): '
 
     while ($true) {
         $key = [Console]::ReadKey($true)
@@ -48,9 +56,9 @@ while ($true) {
     $option = Read-Host 'Opción'
 
     switch ($option) {
-        '1' { $provider = 'SqlServer'; $port = 1433; break }
-        '2' { $provider = 'PostgresSql'; $port = 5432; break }
-        '3' { $provider = 'MySql'; $port = 3306; break }
+        '1' { $provider = 'SqlServer'; $port = 1433; $migrationProject = 'Source/KUKULCAN.SharedKernel.Auth.Migrations.SQLServer/KUKULCAN.SharedKernel.Auth.Migrations.SQLServer.csproj'; break }
+        '2' { $provider = 'PostgresSql'; $port = 5432; $migrationProject = 'Source/KUKULCAN.SharedKernel.Auth.Migrations.PostgreSQL/KUKULCAN.SharedKernel.Auth.Migrations.PostgreSQL.csproj'; break }
+        '3' { $provider = 'MySql'; $port = 3306; $migrationProject = 'Source/KUKULCAN.SharedKernel.Auth.Migrations.MySQL/KUKULCAN.SharedKernel.Auth.Migrations.MySQL.csproj'; break }
         '0' {
             Write-Host 'Salir sin registrar las variables'
             exit 0
@@ -67,6 +75,7 @@ while ($true) {
 $database = Read-Host 'Database name'
 $user = Read-Host 'User'
 $password = Read-MaskedPassword
+Show-Progress 10 'Database connection details collected'
 
 $databaseEscaped = Escape-ConnectionValue $database
 $userEscaped = Escape-ConnectionValue $user
@@ -85,6 +94,7 @@ switch ($provider) {
 }
 
 $directory = Split-Path -Parent $envFile
+Show-Progress 20 'Saving database connection settings'
 New-Item -ItemType Directory -Path $directory -Force | Out-Null
 
 @"
@@ -103,3 +113,31 @@ Write-Host "Provider: $provider"
 Write-Host 'Host: localhost'
 Write-Host "Port: $port"
 Write-Host 'La configuración persistirá para futuras sesiones de PowerShell.'
+
+Show-Progress 30 '.NET SDK and migration project validation'
+if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) { throw '.NET SDK not found.' }
+if (-not (Test-Path $migrationProject)) { throw "Migration project not found: $migrationProject" }
+Show-Progress 40 'Discovering pending EF Core migrations'
+$migrationLines = @(& dotnet ef migrations list --project $migrationProject --startup-project $migrationProject --context AuthDbContext 2>&1)
+if ($LASTEXITCODE -ne 0) {
+    $migrationLines | ForEach-Object { Write-Host $_ }
+    throw 'Could not list EF Core migrations.'
+}
+$migrationLines | ForEach-Object { Write-Host $_ }
+$pendingCount = @($migrationLines | Where-Object { "$_" -match '\(Pending\)' }).Count
+
+Show-Progress 50 'Applying EF Core migrations to the selected database'
+$appliedCount = 0
+& dotnet ef database update --project $migrationProject --startup-project $migrationProject --context AuthDbContext 2>&1 | ForEach-Object {
+    $line = "$_"
+    Write-Host $line
+    if ($line -match 'Applying migration') {
+        $appliedCount++
+        if ($pendingCount -gt 0) {
+            $percent = [Math]::Min(90, 50 + [Math]::Floor($appliedCount * 40 / $pendingCount))
+            Show-Progress $percent "Applied migration $appliedCount of $pendingCount"
+        }
+    }
+}
+if ($LASTEXITCODE -ne 0) { throw 'EF Core database update failed.' }
+Show-Progress 100 'Database setup completed'
