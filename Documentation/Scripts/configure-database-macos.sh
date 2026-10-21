@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "${SCRIPT_DIR}/../.." && pwd)"
+cd "${REPO_ROOT}"
+
 ENV_FILE="${HOME}/.config/kukulcan/database.env"
 SHELL_RC="${HOME}/.zshrc"
 
@@ -23,6 +27,11 @@ mask_password() {
   printf '%s' "${password}"
 }
 
+
+show_progress() {
+  printf '[%3d%%] %s\\n' "$1" "$2"
+}
+
 escape_value() {
   local value="$1"
   value="${value//\\/\\\\}"
@@ -39,9 +48,9 @@ while true; do
   read -r -p "Opción: " option
 
   case "${option}" in
-    1) provider="SqlServer"; port="1433" ;;
-    2) provider="PostgresSql"; port="5432" ;;
-    3) provider="MySql"; port="3306" ;;
+    1) provider="SqlServer"; port="1433"; migration_project="Source/KUKULCAN.SharedKernel.Auth.Migrations.SQLServer/KUKULCAN.SharedKernel.Auth.Migrations.SQLServer.csproj" ;;
+    2) provider="PostgresSql"; port="5432"; migration_project="Source/KUKULCAN.SharedKernel.Auth.Migrations.PostgreSQL/KUKULCAN.SharedKernel.Auth.Migrations.PostgreSQL.csproj" ;;
+    3) provider="MySql"; port="3306"; migration_project="Source/KUKULCAN.SharedKernel.Auth.Migrations.MySQL/KUKULCAN.SharedKernel.Auth.Migrations.MySQL.csproj" ;;
     0)
       printf '%s\n' "Salir sin registrar las variables"
       exit 0
@@ -59,6 +68,8 @@ read -r -p "User: " user
 printf '%s' "Password: "
 password="$(mask_password)"
 
+show_progress 10 "Database connection details collected"
+
 database_escaped="$(escape_value "${database}")"
 user_escaped="$(escape_value "${user}")"
 password_escaped="$(escape_value "${password}")"
@@ -75,6 +86,7 @@ case "${provider}" in
     ;;
 esac
 
+show_progress 20 "Saving database connection settings"
 mkdir -p "$(dirname "${ENV_FILE}")"
 umask 077
 cat > "${ENV_FILE}" <<EOF
@@ -97,3 +109,11 @@ printf '%s\n' "Provider: ${provider}"
 printf '%s\n' "Host: localhost"
 printf '%s\n' "Port: ${port}"
 printf '%s\n' "La configuración persistirá para futuras sesiones de terminal."
+show_progress 30 "Validating the .NET SDK and migration project"
+command -v dotnet >/dev/null 2>&1 || { printf '%s\\n' "Error: .NET SDK not found." >&2; exit 1; }
+[[ -f "${migration_project}" ]] || { printf 'Error: migration project not found: %s\\n' "${migration_project}" >&2; exit 1; }
+show_progress 40 "Discovering EF Core migrations"
+dotnet ef migrations list --project "${migration_project}" --startup-project "${migration_project}" --context AuthDbContext
+show_progress 50 "Applying EF Core migrations to the selected database"
+dotnet ef database update --project "${migration_project}" --startup-project "${migration_project}" --context AuthDbContext
+show_progress 100 "Database setup completed"
