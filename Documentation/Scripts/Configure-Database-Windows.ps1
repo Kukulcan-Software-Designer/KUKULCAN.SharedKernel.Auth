@@ -124,7 +124,7 @@ if ($LASTEXITCODE -ne 0) {
     throw 'Could not list EF Core migrations.'
 }
 $migrationLines | ForEach-Object { Write-Host $_ }
-$pendingCount = @($migrationLines | Where-Object { "$_" -match '\\(Pending\\)' }).Count
+$pendingCount = @($migrationLines | Where-Object { "$_" -match '\(Pending\)' }).Count
 
 Show-Progress 50 'Applying EF Core migrations to the selected database'
 $appliedCount = 0
