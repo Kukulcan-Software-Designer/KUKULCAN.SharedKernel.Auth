@@ -18,8 +18,8 @@ mask_password() {
   local password=""
   local char=""
   while IFS= read -r -s -n 1 char; do
-    # Bash read -n 1 consumes Enter as an empty character; stop instead of waiting forever.
-    [[ -z "${char}" || "${char}" == 
+    # Enter is returned as an empty character by Bash read -n 1.
+    [[ -z "${char}" ]] && break
     if [[ "${char}" == $'\177' || "${char}" == $'\b' ]]; then
       if [[ -n "${password}" ]]; then
         password="${password%?}"
