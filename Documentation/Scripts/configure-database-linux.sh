@@ -121,7 +121,7 @@ command -v dotnet >/dev/null 2>&1 || { printf '%s\n' "Error: .NET SDK not found.
 show_progress 40 "Discovering pending EF Core migrations"
 migration_output="$(dotnet ef migrations list --project "${migration_project}" --startup-project "${migration_project}" --context AuthDbContext 2>&1)"
 printf '%s\n' "${migration_output}"
-pending_count="$(printf '%s\n' "${migration_output}" | grep -Ec '\\(Pending\\)' || true)"
+pending_count="$(printf '%s\n' "${migration_output}" | grep -Ec '\(Pending\)' || true)"
 show_progress 50 "Applying EF Core migrations to the selected database"
 applied_count=0
 dotnet ef database update --project "${migration_project}" --startup-project "${migration_project}" --context AuthDbContext 2>&1 |
