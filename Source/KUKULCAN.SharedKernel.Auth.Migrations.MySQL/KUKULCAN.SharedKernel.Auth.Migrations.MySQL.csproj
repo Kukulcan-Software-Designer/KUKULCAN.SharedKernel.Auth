@@ -13,6 +13,6 @@
   <ItemGroup>
     <ProjectReference Include="../KUKULCAN.SharedKernel.Auth/KUKULCAN.SharedKernel.Auth.csproj" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.*" PrivateAssets="all" />
-    <PackageReference Include="MySql.EntityFrameworkCore" Version="10.0.9" />
+    <PackageReference Include="MySql.EntityFrameworkCore" Version="10.0.12" />
   </ItemGroup>
 </Project>

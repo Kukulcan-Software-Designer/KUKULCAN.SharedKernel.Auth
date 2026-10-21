@@ -1,8 +1,8 @@
 <Project>
     <PropertyGroup>
-       <VersionPrefix>1.1.5</VersionPrefix>
-        <AssemblyVersion>1.1.5</AssemblyVersion>
-        <FileVersion>1.1.5</FileVersion>
+       <VersionPrefix>1.1.6</VersionPrefix>
+        <AssemblyVersion>1.1.6</AssemblyVersion>
+        <FileVersion>1.1.6</FileVersion>
         <NuGetAudit>true</NuGetAudit>
     </PropertyGroup>
 </Project>
