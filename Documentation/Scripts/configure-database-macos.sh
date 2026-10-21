@@ -17,14 +17,14 @@ mask_password() {
     if [[ "${char}" == $'\177' || "${char}" == $'\b' ]]; then
       if [[ -n "${password}" ]]; then
         password="${password%?}"
-        printf '\b \b'
+        printf '\b \b' >&2
       fi
     else
       password+="${char}"
-      printf '*'
+      printf '*' >&2
     fi
   done
-  printf '\n'
+  printf '\n' >&2
   printf '%s' "${password}"
 }
 
