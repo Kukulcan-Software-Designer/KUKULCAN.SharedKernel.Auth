@@ -12,7 +12,7 @@ function Show-Progress([int]$Percent, [string]$Message) {
 
 function Read-MaskedPassword {
     $password = [System.Text.StringBuilder]::new()
-    Write-Host -NoNewline 'Password: '
+    Write-Host -NoNewline 'Password (each character shown as *): '
 
     while ($true) {
         $key = [Console]::ReadKey($true)
